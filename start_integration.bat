@@ -37,6 +37,12 @@ if errorlevel 1 (
   echo    OK - the phone can reach http://127.0.0.1:8000 .
 )
 
+choice /m "Keep the phone screen awake while charging (svc power stayon true)"
+if errorlevel 2 goto afterstay
+"%ADB%" shell svc power stayon true
+echo    screen-on enabled - revert with stop_demo.bat
+:afterstay
+
 echo.
 echo [3/4] Starting bridge + mirror (upstream app.py untouched) ...
 start "KINETIQ mirror + Band 6" cmd /k "python kinetiq-integration\run_stack.py"

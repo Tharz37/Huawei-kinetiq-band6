@@ -33,8 +33,9 @@ Huawei Band 6 ──BLE── Huawei Health (untouched, home screen)
    ```
 
 2. Run `start_integration.bat` from the repository root.
-   It reuses or starts the receiver, sets up `adb reverse tcp:8000 tcp:8000`,
-   starts the bridge → mirror stack, and opens the mirror at
+   It reuses or starts the receiver, sets up `adb reverse tcp:8000 tcp:8000`
+   (and offers the same screen-awake toggle as `start_demo.bat`), starts the
+   bridge → mirror stack, and opens the mirror at
    <http://127.0.0.1:8777/>.
 
 3. On the phone: open **Huawei Health**, stay on the home screen, and make sure
