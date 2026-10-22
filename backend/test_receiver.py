@@ -156,6 +156,22 @@ class ValidationTests(unittest.TestCase):
         _, errs = validate_payload(good_payload(stress_mode="liquid"), self.cfg)
         self.assertTrue(errs)
 
+    def test_steps_validation(self):
+        # Task-004 additive field: today's cumulative steps, optional.
+        rec, errs = validate_payload(good_payload(steps=4181), self.cfg)
+        self.assertEqual(errs, [])
+        self.assertEqual(rec["steps"], 4181)
+        rec, errs = validate_payload(good_payload(steps=0), self.cfg)
+        self.assertEqual(errs, [])
+        self.assertEqual(rec["steps"], 0)
+        # Absent stays None (never zero) so old relays keep working.
+        rec, errs = validate_payload(good_payload(), self.cfg)
+        self.assertEqual(errs, [])
+        self.assertIsNone(rec["steps"])
+        for bad in (-1, 200_001, 62.5, "4181", True, "many"):
+            _, errs = validate_payload(good_payload(steps=bad), self.cfg)
+            self.assertTrue(errs, f"steps={bad!r} should be rejected")
+
     def test_ble_source_and_transport(self):
         # BLE-probe source (Task 002) accepted, transport validated, additive
         # and backward compatible (hms payload without transport still fine).
@@ -264,11 +280,12 @@ class ServerTests(unittest.TestCase):
         self.assertIn("reasons", body)
 
     def test_valid_post_updates_latest(self):
-        code, _ = self._post(good_payload(heart_rate_bpm=78))
+        code, _ = self._post(good_payload(heart_rate_bpm=78, steps=4181))
         self.assertEqual(code, 200)
         code, snap = self._get("/api/wearable/latest")
         self.assertEqual(code, 200)
         self.assertEqual(snap["real"]["heart_rate_bpm"], 78)
+        self.assertEqual(snap["real"]["steps"], 4181)
         self.assertEqual(snap["real_freshness"], "live")
 
     def test_simulated_never_overwrites_real(self):
@@ -295,6 +312,22 @@ class ServerTests(unittest.TestCase):
         from kinetiq_receiver import create_server as cs
         with self.assertRaises(SystemExit):
             cs(make_cfg(auth_token=""))
+
+    def test_csv_header_upgrade_rotates_old_file(self):
+        # Task-004 adds a trailing steps column. An older CSV (short header)
+        # must never be appended to with a mismatched header; it is rotated.
+        from pathlib import Path
+        from kinetiq_receiver import WearableStore
+        store = WearableStore(self.cfg)
+        path = Path(self.cfg["data_dir"]) / "kinetiq_wearable.csv"
+        path.write_text("received_at,source\n1,old\n", encoding="utf-8")
+        record, errs = validate_payload(good_payload(steps=12), self.cfg)
+        self.assertEqual(errs, [])
+        store._append_csv(path, record)
+        lines = path.read_text(encoding="utf-8").splitlines()
+        self.assertTrue(lines[0].endswith(",steps"))
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(list(path.parent.glob("kinetiq_wearable.*.bak.csv"))), 1)
 
     def test_load_config_env_override(self):
         import os

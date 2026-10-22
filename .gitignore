@@ -26,6 +26,10 @@ __pycache__/
 *.py[cod]
 .venv/
 
+# ---- local-only / not vendored ----
+/external/
+backend/data/*.bak.csv
+
 # ---- OS ----
 Thumbs.db
 .DS_Store

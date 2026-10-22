@@ -73,12 +73,71 @@ class HealthParserTest {
         assertNull(reading.heartRateBpm)
         assertNull(reading.spo2Percent)
         assertNull(reading.stressScore)
+        assertNull(reading.steps)
 
         val hrOnly = HealthParser.parse(listOf("Heart rate", "80 bpm"))
         assertTrue(hrOnly.hasAny)
         assertEquals(80, hrOnly.heartRateBpm)
         assertNull(hrOnly.spo2Percent)
         assertNull(hrOnly.stressScore)
+        assertNull(hrOnly.steps)
+    }
+
+    @Test
+    fun parsesStepsFromRealHomepageTile() {
+        // Node order captured from the live Health home screen (2026-10-22):
+        // the lowercase unit node is also a "steps" label, so only the label's
+        // immediate neighbour may be read as the value.
+        val reading = HealthParser.parse(
+            listOf(
+                "Sleep", "Add record", "Steps", "4,181", "steps",
+                "Mood", "Stress", "57", "Normal",
+                "Heart", "127", "bpm",
+                "SpO₂", "100%"
+            )
+        )
+        assertEquals(4181, reading.steps)
+        assertEquals(127, reading.heartRateBpm)
+        assertEquals(57, reading.stressScore)
+        assertEquals(100f, reading.spo2Percent)
+    }
+
+    @Test
+    fun parsesStepsFromValueAndUnitOnly() {
+        assertEquals(4181, HealthParser.parse(listOf("4,181", "steps")).steps)
+    }
+
+    @Test
+    fun parsesStepsFromInlineDescription() {
+        val reading = HealthParser.parse(listOf("Today you walked 7,412 steps"))
+        assertEquals(7412, reading.steps)
+    }
+
+    @Test
+    fun stepUnitAloneIsNotACount() {
+        // "steps" is a unit node here; the only number belongs to the stress
+        // card and must never be promoted to a step count.
+        val reading = HealthParser.parse(
+            listOf("Sleep", "6 h 10 min", "steps", "Mood", "Stress", "57")
+        )
+        assertNull(reading.steps)
+        assertEquals(57, reading.stressScore)
+    }
+
+    @Test
+    fun zeroStepsIsAValidReading() {
+        assertEquals(0, HealthParser.parse(listOf("Steps", "0")).steps)
+    }
+
+    @Test
+    fun rejectsOutOfRangeSteps() {
+        assertNull(HealthParser.parse(listOf("Steps", "250,000")).steps)
+    }
+
+    @Test
+    fun displaysParsedSteps() {
+        val display = HealthParser.Reading(127, 100f, 57, 4181).display()
+        assertTrue(display.contains("Steps 4,181"))
     }
 
     @Test
@@ -94,9 +153,10 @@ class HealthParserTest {
 
     @Test
     fun displayUsesDashForAbsentValues() {
-        val display = HealthParser.Reading(72, 98f, null).display()
+        val display = HealthParser.Reading(72, 98f, null, null).display()
         assertTrue(display.contains("HR 72 bpm"))
         assertTrue(display.contains("SpO2 98%"))
         assertTrue(display.contains("Stress -"))
+        assertTrue(display.contains("Steps -"))
     }
 }

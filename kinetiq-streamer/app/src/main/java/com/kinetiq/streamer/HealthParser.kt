@@ -24,6 +24,8 @@ object HealthParser {
     const val SPO2_MAX = 100
     const val STRESS_MIN = 0
     const val STRESS_MAX = 100
+    const val STEPS_MIN = 0
+    const val STEPS_MAX = 200_000
 
     /** Number of texts after a label node that are searched for its value. */
     private const val LABEL_WINDOW = 3
@@ -31,17 +33,19 @@ object HealthParser {
     data class Reading(
         val heartRateBpm: Int?,
         val spo2Percent: Float?,
-        val stressScore: Int?
+        val stressScore: Int?,
+        val steps: Int?
     ) {
         val hasAny: Boolean
-            get() = heartRateBpm != null || spo2Percent != null || stressScore != null
+            get() = heartRateBpm != null || spo2Percent != null ||
+                stressScore != null || steps != null
 
-        /** Log/prefs form, e.g. `hr=72 spo2=98.0 stress=null`. */
+        /** Log/prefs form, e.g. `hr=72 spo2=98.0 stress=null steps=4181`. */
         fun summary(): String =
             "hr=${heartRateBpm ?: "null"} spo2=${spo2Percent ?: "null"} " +
-                "stress=${stressScore ?: "null"}"
+                "stress=${stressScore ?: "null"} steps=${steps ?: "null"}"
 
-        /** Screen form, e.g. `HR 72 bpm   SpO2 98%   Stress 34`. */
+        /** Screen form, e.g. `HR 72 bpm   SpO2 98%   Stress 34   Steps 4181`. */
         fun display(): String {
             val hr = heartRateBpm?.let { "$it bpm" } ?: "-"
             val spo2 = spo2Percent?.let {
@@ -49,7 +53,10 @@ object HealthParser {
                 String.format(Locale.US, format, it)
             } ?: "-"
             val stress = stressScore?.toString() ?: "-"
-            return "HR $hr   SpO2 $spo2   Stress $stress"
+            val stepText = steps?.let {
+                String.format(Locale.US, "%,d", it)
+            } ?: "-"
+            return "HR $hr   SpO2 $spo2   Stress $stress   Steps $stepText"
         }
     }
 
@@ -63,13 +70,19 @@ object HealthParser {
     // Standalone stress number; word boundaries avoid chopping digits out of
     // years or node ids.
     private val STRESS_VALUE_REGEX = Regex("""\b(\d{1,3})(?!\d)\b""")
+    // A value inside one node ("4,181 steps"), as some Health layouts render it.
+    private val STEPS_INLINE_REGEX =
+        Regex("""\b(\d{1,3}(?:,\d{3})*|\d+)\s*steps?\b""", RegexOption.IGNORE_CASE)
+    // A bare value node next to the label/unit ("4,181").
+    private val STEPS_NUMBER_REGEX = Regex("""^\d{1,3}(?:,\d{3})*$""")
 
     fun parse(texts: List<String>): Reading {
         val clean = texts.map { it.trim() }.filter { it.isNotEmpty() }
         return Reading(
             heartRateBpm = findHeartRate(clean),
             spo2Percent = findSpo2(clean),
-            stressScore = findStress(clean)
+            stressScore = findStress(clean),
+            steps = findSteps(clean)
         )
     }
 
@@ -125,5 +138,44 @@ object HealthParser {
             }
         }
         return null
+    }
+
+    /**
+     * Finds today's step count.
+     *
+     * The live Health home screen emits three sibling nodes:
+     * `"Steps"`, `"4,181"`, `"steps"`. The lowercase unit node is also a
+     * "steps" label, so a wide window would let an unrelated later number
+     * (e.g. the stress score) masquerade as steps. Each rule below therefore
+     * requires the value and the word to be adjacent, and the value is range
+     * checked (0..200000) like every other metric.
+     */
+    private fun findSteps(texts: List<String>): Int? {
+        // 1) label immediately followed by its value: "Steps", "4,181"
+        for (index in texts.indices) {
+            if (!texts[index].equals("steps", ignoreCase = true)) continue
+            if (index + 1 >= texts.size) continue
+            stepValue(texts[index + 1])?.let { return it }
+        }
+        // 2) value immediately followed by the unit: "4,181", "steps"
+        for (index in 0 until texts.size - 1) {
+            if (!texts[index + 1].equals("steps", ignoreCase = true)) continue
+            stepValue(texts[index])?.let { return it }
+        }
+        // 3) both inside one node: "You walked 4,181 steps today"
+        for (text in texts) {
+            for (match in STEPS_INLINE_REGEX.findAll(text)) {
+                val value = match.groupValues[1].replace(",", "").toIntOrNull() ?: continue
+                if (value in STEPS_MIN..STEPS_MAX) return value
+            }
+        }
+        return null
+    }
+
+    private fun stepValue(text: String): Int? {
+        val trimmed = text.trim()
+        if (!STEPS_NUMBER_REGEX.matches(trimmed)) return null
+        val value = trimmed.replace(",", "").toIntOrNull() ?: return null
+        return if (value in STEPS_MIN..STEPS_MAX) value else null
     }
 }

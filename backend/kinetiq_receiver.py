@@ -48,6 +48,9 @@ SPO2_MODES = ("realtime", "historical", "unavailable", "unsupported")
 # more tension/probable fatigue; the band's Health UI groups these bands.
 STRESS_MODES = ("realtime", "historical", "unavailable", "unsupported")
 STRESS_MIN, STRESS_MAX = 0, 100
+# Additive Task 004 field: today's cumulative step count read off the Health
+# home screen. Optional and backward compatible: older relays omit it.
+STEPS_MIN, STEPS_MAX = 0, 200_000
 PHONE_STATUSES = ("ok", "permission_denied", "unsupported", "error")
 
 HR_MIN, HR_MAX = 30, 220          # bpm, accepted sensor range
@@ -59,7 +62,7 @@ CSV_FIELDS = [
     "received_at", "source", "schema_version", "timestamp",
     "heart_rate_bpm", "spo2_percent", "stress_score",
     "heart_rate_mode", "spo2_mode", "stress_mode",
-    "status", "device_model", "simulated", "transport",
+    "status", "device_model", "simulated", "transport", "steps",
 ]
 
 
@@ -163,6 +166,13 @@ def validate_payload(obj: object, cfg: dict) -> tuple[dict, list[str]]:
     if stress_mode not in STRESS_MODES:
         errors.append(f"stress_mode must be one of {list(STRESS_MODES)}")
 
+    # Task 004 additive field: today's step count from the Health home screen.
+    steps = obj.get("steps")
+    if steps is not None and (
+        not _is_int(steps) or not (STEPS_MIN <= steps <= STEPS_MAX)
+    ):
+        errors.append(f"steps must be null or an integer {STEPS_MIN}..{STEPS_MAX}")
+
     status = obj.get("status", "ok")
     if status not in PHONE_STATUSES:
         errors.append(f"status must be one of {list(PHONE_STATUSES)}")
@@ -236,6 +246,7 @@ def validate_payload(obj: object, cfg: dict) -> tuple[dict, list[str]]:
         "device_model": device_model,
         "simulated": simulated,
         "transport": transport,
+        "steps": steps,
     }, []
 
 
@@ -262,6 +273,20 @@ class WearableStore:
 
     # -- state --------------------------------------------------------------
     def _append_csv(self, path: Path, record: dict) -> None:
+        # Additive schema fields (stress in Task 003, steps in Task 004) change
+        # the locked header. An older file is rotated aside instead of being
+        # appended to with a mismatched header, which would corrupt the layout.
+        expected = ",".join(CSV_FIELDS)
+        if path.exists():
+            try:
+                with path.open("r", encoding="utf-8", newline="") as fh:
+                    header = fh.readline().strip()
+                if header and header != expected:
+                    stamp = time.strftime("%Y%m%d_%H%M%S")
+                    backup = path.with_name(f"{path.stem}.{stamp}.bak{path.suffix}")
+                    path.replace(backup)
+            except OSError:
+                pass
         exists = path.exists()
         with path.open("a", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS)
@@ -282,6 +307,7 @@ class WearableStore:
                 "device_model": record["device_model"],
                 "simulated": record["simulated"],
                 "transport": record["transport"],
+                "steps": "" if record.get("steps") is None else record["steps"],
             })
 
     def _freshness(self, record: dict | None) -> str:

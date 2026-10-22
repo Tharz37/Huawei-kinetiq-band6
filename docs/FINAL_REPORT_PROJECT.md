@@ -411,3 +411,22 @@ adb shell "pm dump com.huawei.health | grep -icE 'permission.health'"
   Bluetooth was restarted from shell twice today solely for capture arming
   and hygiene (ON state restored, verified).
 - Every UI-level action on the phone (taps) was user-driven.
+
+## Appendix D — Partner mirror integration (22 Oct 2026)
+- Cloned `siddoit/KinetiQ`; its laptop mirror is a stdlib HTTP dashboard fed by
+  a locked eight-field telemetry schema (`laptop/receiver/telemetry_schema.py`).
+- Added `kinetiq-integration/` in this repository: a bridge that polls our
+  receiver and validates every packet against the upstream schema's own
+  `TelemetryRecord.parse` before emitting it through their documented
+  `--stdin` mode. The upstream clone remains byte-identical
+  (`git -C external/KinetiQ status --porcelain` is empty).
+- Genuine fields: heart rate, SpO2 and steps. Not relayed by this path:
+  activity (`unknown`) and motion (`0.0`); exertion uses the upstream
+  `derive_exertion` heuristic. Stress has no schema slot and is shown in an
+  additive runtime chip (with relay freshness) rather than being dropped.
+- Our relay gained `steps` additively (streamer parser 0-200,000, optional
+  receiver field, CSV column); older relays still validate and absent steps
+  remain `null`, never `0`.
+- Verified end-to-end: Health home screen -> receiver (`live`) -> mirror
+  `/api/telemetry` (HR 60, SpO2 100, steps 4,181, stress 57 in the chip).
+  Tests: receiver 22/22, integration 15/15, parser 19/19.

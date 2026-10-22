@@ -13,11 +13,17 @@ Wellness assistance only - not a medical device, not medical diagnosis.
   **KinetiQ Streamer** Android app reads the Health home screen through the
   Android Accessibility API and posts the values to a local receiver, which
   serves the dashboard. No root, no HMS Core, no modification of the band or
-  of Huawei Health, nothing leaves the local machine. (Example verified run:
-  127 bpm / 100% SpO2 / stress 57, cross-checked against the band display.)
+  of Huawei Health, nothing leaves the local machine. (Example verified run on
+  22 Oct 2026: HR 60 bpm / 100% SpO2 / stress 57 / 4,181 steps, read from the
+  Health home screen and relayed end-to-end.)
 - **Clearly separated SIMULATED lane** for stable demo visuals; real readings
   are never mixed with mock data (`simulated: false` + source whitelist are
-  enforced by the receiver, 20/20 unit tests).
+  enforced by the receiver, 22/22 unit tests).
+- **Partner mirror integration**: the same genuine readings also drive the
+  partner KINETIQ browser mirror (`siddoit/KinetiQ`) through its documented
+  `--stdin` mode. Their repository is left byte-identical; stress (which their
+  locked schema cannot carry) appears in an additive provenance chip. See
+  [`kinetiq-integration/`](kinetiq-integration/README.md).
 - **Cumulative research** of every non-destructive channel on the device:
   plain BLE, the Huawei LPv2 protocol, a Bluetooth HCI capture of Huawei
   Health's own authenticated session with offline crypto verification, a full
@@ -43,13 +49,15 @@ No internet needed at demo time: the phone reaches the laptop over USB
 
 | Path | Contents |
 |---|---|
-| `backend/` | Receiver (stdlib HTTP, schema v1, SSE) + 20 unit tests + mock sender |
+| `backend/` | Receiver (stdlib HTTP, schema v1, SSE) + 22 unit tests + mock sender |
 | `web/` | Dashboard front-end |
 | `kinetiq-streamer/` | **Presentation app**: AccessibilityService reader for Health's home screen |
+| `kinetiq-integration/` | Additive bridge into the partner KINETIQ mirror (their repo untouched) + 15 tests |
 | `ble-diagnostic/` | Diagnostic app: BLE scan/GATT dump, LPv2 probes, Wear Engine probe |
 | `android-bridge/` | HMS Health Kit source (blocked on this hardware; kept for Huawei hardware) |
 | `docs/` | Full research record: BLE field results, LPv2 deep dive, HCI crypto closure, Health app dissection, Wear Engine application, master report |
 | `start_demo.bat` / `stop_demo.bat` | One-click local demo startup/teardown (receiver + USB tunnel + dashboard) |
+| `start_integration.bat` | One-click receiver + bridge + partner mirror (port 8777) |
 
 ## Quick start
 
@@ -69,6 +77,24 @@ Phone (one-time):
 Receiver API: `POST /api/wearable` (schema v1, `X-KinetiQ-Token` header),
 `GET /api/wearable/latest`, `GET /` (dashboard). Example payloads and the exact
 contract are in `backend/kinetiq_receiver.py` and `docs/`.
+
+## Partner mirror integration (additive)
+
+The genuine values can also drive the partner KINETIQ browser mirror without
+editing their code:
+
+```bat
+git clone https://github.com/siddoit/KinetiQ external\KinetiQ   rem once
+start_integration.bat
+```
+
+Their documented `--stdin` mode receives packets from
+`kinetiq-integration/band_bridge.py` in their locked eight-field schema;
+`mirror_band.py` only adds a read-only `/band/api` route and a small provenance
+chip (source, relay freshness, stress). Their `git status` stays empty. Heart
+rate, SpO2 and steps are genuine; activity and motion are not relayed by this
+path and appear as `unknown` / `0.00`. The full field-by-field mapping and
+honesty notes are in [`kinetiq-integration/README.md`](kinetiq-integration/README.md).
 
 ## Honesty rules kept throughout
 

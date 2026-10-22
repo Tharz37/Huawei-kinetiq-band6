@@ -1,7 +1,7 @@
 # KinetiQ Streamer
 
 Standalone Android app (package `com.kinetiq.streamer`) that reads the genuine
-heart-rate / SpO2 / stress values displayed on the **Huawei Health** home
+heart-rate / SpO2 / stress / step values displayed on the **Huawei Health** home
 screen through an `AccessibilityService` and POSTs them to the local KinetiQ
 laptop receiver. Built for the offline university demo: no Internet, no cloud,
 no simulation.
@@ -39,7 +39,8 @@ APK: `app\build\outputs\apk\debug\app-debug.apk`
   `transport=health_app_ui`, `simulated=false`.
 - No POST unless at least one metric was actually parsed from the screen.
 - A metric that is not visible is serialised as JSON `null`, never `0`.
-- Values pass sensor range checks (HR 20–260 bpm, SpO2 70–100 %, stress 0–100).
+- Values pass sensor range checks (HR 20–260 bpm, SpO2 70–100 %, stress 0–100,
+  steps 0–200,000).
 - `heart_rate_mode` / `stress_mode` are `realtime` when present,
   `spo2_mode` is `historical` when present, otherwise `unavailable`.
 

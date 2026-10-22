@@ -235,6 +235,7 @@ class StreamService : AccessibilityService() {
         body.put("heart_rate_bpm", reading.heartRateBpm ?: JSONObject.NULL)
         body.put("spo2_percent", reading.spo2Percent?.toDouble() ?: JSONObject.NULL)
         body.put("stress_score", reading.stressScore ?: JSONObject.NULL)
+        body.put("steps", reading.steps ?: JSONObject.NULL)
         body.put(
             "heart_rate_mode",
             if (reading.heartRateBpm != null) "realtime" else "unavailable"
