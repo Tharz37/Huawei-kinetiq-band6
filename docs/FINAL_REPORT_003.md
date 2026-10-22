@@ -42,7 +42,7 @@ Build, install and validation - Huawei Band 6 bridge (BLE diagnostic route)
 ## 4. Installation status - INSTALLED (2026-10-18)
 
 - Phone-side steps completed by the user (USB debugging + RSA accept).
-  `adb devices`: `4Z01Z3220Y352714336  device  product:Hawkeye_00IN
+  `adb devices`: `REDACTED-SERIAL  device  product:Hawkeye_00IN
   model:Nokia_C22 transport_id:1`.
 - `adb shell getprop`: Android **13** (SDK 33), model "Nokia C22".
 - Installs (streamed, `adb install -r -t`): all **Success**. After the first
@@ -65,7 +65,7 @@ Full record: `docs/BLE_FIELD_RESULTS.md`; raw evidence:
   app holds the ACL), and a connected peripheral stops general advertising.
   Health's own filtered-scan history saw results yesterday, consistent.
 - Band identified from the **system bond list** instead:
-  `HUAWEI Band 6-061 / 9C:56:36:B1:50:61 (LE)` - the app's new "2B · Show
+  `HUAWEI Band 6-XXX / 02:00:00:12:34:56 (LE)` - the app's new "2B · Show
   bonded devices" path (scan can't see a connected band).
 - **GATT connect: status=0** with Health *still holding its link* (shared
   ACL, multiple GATT clients permitted). Health was never disconnected,

@@ -79,7 +79,7 @@ sanctioned source exists (any route in §5).
 ## 3. What we learned about the Huawei Band 6 (all on-device verified)
 
 Hardware: **Huawei Band 6**, firmware `1.0.0.1` (read from the Device Info
-GATT service), bonded LE `HUAWEI Band 6-061 / 9C:56:36:B1:50:61`, owned by
+GATT service), bonded LE `HUAWEI Band 6-XXX / 02:00:00:12:34:56`, owned by
 **Huawei Health `com.huawei.health` 14.1.2.320** on a Nokia C22 (stock
 Android 13, no HMS Core, Health installed as a normal APK).
 

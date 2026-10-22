@@ -4,8 +4,8 @@
 2026-10-18 13:16:30.309 Unpaired band usually shows as '(unnamed)'. Connect Huawei Health once if needed — this app never modifies the band's pairing or settings.
 2026-10-18 13:17:52.834 Unpaired band usually shows as '(unnamed)'. Connect Huawei Health once if needed — this app never modifies the band's pairing or settings.
 2026-10-18 13:18:04.475 showed bonded device list (1 item(s))
-2026-10-18 13:18:21.917 user-selected device: HUAWEI Band 6-061 9C:56:36:B1:50:61
-2026-10-18 13:18:22.958 connect(attempt): HUAWEI Band 6-061 9C:56:36:B1:50:61
+2026-10-18 13:18:21.917 user-selected device: HUAWEI Band 6-XXX 02:00:00:12:34:56
+2026-10-18 13:18:22.958 connect(attempt): HUAWEI Band 6-XXX 02:00:00:12:34:56
 2026-10-18 13:18:23.034 connected (status=0)
 2026-10-18 13:18:23.068 services discovered:
 Service 00001800-0000-1000-8000-00805f9b34fb(inst 1)
@@ -126,8 +126,8 @@ Service 00003802-0000-1000-8000-00805f9b34fb(inst 768)
 2026-10-18 13:25:16.987   └ lpv2 svc=2 cmd=6 tags=[127] crc=OK
 2026-10-18 13:25:28.666 Unpaired band usually shows as '(unnamed)'. Connect Huawei Health once if needed — this app never modifies the band's pairing or settings.
 2026-10-18 13:25:40.665 showed bonded device list (1 item(s))
-2026-10-18 13:25:42.862 user-selected device: HUAWEI Band 6-061 9C:56:36:B1:50:61
-2026-10-18 13:25:44.066 connect(attempt): HUAWEI Band 6-061 9C:56:36:B1:50:61
+2026-10-18 13:25:42.862 user-selected device: HUAWEI Band 6-XXX 02:00:00:12:34:56
+2026-10-18 13:25:44.066 connect(attempt): HUAWEI Band 6-XXX 02:00:00:12:34:56
 2026-10-18 13:25:44.100 connected (status=0)
 2026-10-18 13:25:44.125 services discovered:
 Service 00001800-0000-1000-8000-00805f9b34fb(inst 1)
@@ -185,8 +185,8 @@ Service 00003802-0000-1000-8000-00805f9b34fb(inst 768)
 2026-10-18 13:26:59.250 user requested disconnect — GATT closed, nothing modified on the band
 2026-10-18 13:27:45.108 Unpaired band usually shows as '(unnamed)'. Connect Huawei Health once if needed — this app never modifies the band's pairing or settings.
 2026-10-18 13:27:53.857 showed bonded device list (1 item(s))
-2026-10-18 13:27:56.029 user-selected device: HUAWEI Band 6-061 9C:56:36:B1:50:61
-2026-10-18 13:27:57.025 connect(attempt): HUAWEI Band 6-061 9C:56:36:B1:50:61
+2026-10-18 13:27:56.029 user-selected device: HUAWEI Band 6-XXX 02:00:00:12:34:56
+2026-10-18 13:27:57.025 connect(attempt): HUAWEI Band 6-XXX 02:00:00:12:34:56
 2026-10-18 13:27:57.057 connected (status=0)
 2026-10-18 13:27:57.079 services discovered:
 Service 00001800-0000-1000-8000-00805f9b34fb(inst 1)

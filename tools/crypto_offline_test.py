@@ -84,7 +84,7 @@ SECRET_KEYS = {
     3: (bytes.fromhex("555386FC632007AA86493522B86AE25C"),
         bytes.fromhex("33079BC57A886D3CF56137096F228000")),
 }
-BAND_MAC = "9C:56:36:B1:50:61"
+BAND_MAC = "02:00:00:12:34:56"
 
 
 def digest_of(secret_hex: str, complete: bytes) -> bytes:

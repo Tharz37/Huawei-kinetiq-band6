@@ -9,10 +9,10 @@ is claimed. Device-*identity* values (§reads) are the only decoded plaintext.
 
 ## Run 1 — 2026-10-18, 13:0x–13:2x IST
 
-- Device identified: **`HUAWEI Band 6-061`** · `9C:56:36:B1:50:61` — found via
+- Device identified: **`HUAWEI Band 6-XXX`** · `02:00:00:12:34:56` — found via
   the system bond list ("2B · Show bonded devices"), NOT via advertising.
 - System-bond state: **bonded** (LE bond exists; phone Bluetooth "Bonded
-  devices" dumpsys lists it: `9C:56:36:B1:50:61 [  LE  ] HUAWEI Band 6-061`).
+  devices" dumpsys lists it: `02:00:00:12:34:56 [  LE  ] HUAWEI Band 6-XXX`).
 - Advertised UUIDs observed on the band: **none** — see the scan note below.
 
 ## Key scan finding (root-caused, not a bug)
@@ -24,7 +24,7 @@ dumpsys: the band has been **continuously LE-connected to this phone for
 ≈14.4 h** (GATT connection record `22:50:04 → 51,695,853 ms`) — held by
 `com.huawei.health` (`app_if 5` GATT client). A connected peripheral stops
 general advertising, so a scan cannot discover it. Health's own filtered scan
-history (`BluetoothLeScanFilter DeviceAddress=9C:56:36:B1:50:61`, yesterday
+history (`BluetoothLeScanFilter DeviceAddress=02:00:00:12:34:56`, yesterday
 22:39) saw results — i.e. the band *was* advertising while unconnected.
 
 Two real app bugs were found and fixed during this run (documented because
