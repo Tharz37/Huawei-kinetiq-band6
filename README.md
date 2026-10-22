@@ -1,47 +1,91 @@
-# KinetiQ minor project
+# KinetiQ — Huawei Band 6 health dashboard
 
-RTOS-based IoT healthcare assistant with sensor-grounded voice AI —
-“the wellness mirror that sees, listens and answers.”
-Wellness assistance only; not medical diagnosis.
+RTOS-based IoT healthcare assistant ("the wellness mirror that sees, listens
+and answers"). This repository is the **Huawei Band 6 data-bridge** work:
+displaying genuine heart rate, SpO2 and stress from a retail Huawei Band 6 on
+a local laptop dashboard.
 
-## Task 001 — Huawei Band 6 data bridge (PoC)
+Wellness assistance only - not a medical device, not medical diagnosis.
 
-Retrieves genuine heart-rate (+ latest SpO₂ where supported) from a Huawei
-Band 6 via Health Service Kit, POSTs schema-v1 JSON to the laptop over
-trusted LAN, and shows it on the local dashboard.
+## What works today (verified on-device)
+
+- **Genuine readings on the dashboard**: the band syncs to Huawei Health; the
+  **KinetiQ Streamer** Android app reads the Health home screen through the
+  Android Accessibility API and posts the values to a local receiver, which
+  serves the dashboard. No root, no HMS Core, no modification of the band or
+  of Huawei Health, nothing leaves the local machine. (Example verified run:
+  127 bpm / 100% SpO2 / stress 57, cross-checked against the band display.)
+- **Clearly separated SIMULATED lane** for stable demo visuals; real readings
+  are never mixed with mock data (`simulated: false` + source whitelist are
+  enforced by the receiver, 20/20 unit tests).
+- **Cumulative research** of every non-destructive channel on the device:
+  plain BLE, the Huawei LPv2 protocol, a Bluetooth HCI capture of Huawei
+  Health's own authenticated session with offline crypto verification, a full
+  dissection of the Health app's inter-app surfaces, and an attempt at the
+  official Wear Engine channel through Health (application pending review).
+
+## Architecture
 
 ```
-android-bridge/        Kotlin app (API 33): auth, HR start/stop, SpO2 query, upload
-ble-diagnostic/        Kotlin app (API 33, Task 002): passive BLE scan, GATT dump,
-                       LPv2 frame CRC diagnostics (no health-claim logic)
-backend/
-  kinetiq_receiver.py  laptop receiver: validate + CSV + SSE + serve dashboard
-  test_receiver.py     17 unittest cases (stdlib)
-  mock_sender.py       SIMULATED pipeline test (mock data, clearly labelled)
-  config.example.json  placeholders only (copy to gitignored config.json)
-web/index.html         dashboard: wearable section, live updates, SIMULATED panel
-docs/
-  PLAN.md              implementation plan from actual repo inspection
-  SETUP_HUAWEI_BAND6.md console/phone/network/troubleshooting guide
-  FINAL_REPORT.md      honest implemented / mocked / compiled / tested matrix
+Huawei Band 6 ──BLE── Huawei Health (phone, untouched)
+                          │  home-screen cards
+                          ▼
+              KinetiQ Streamer (AccessibilityService, phone app)
+                          │  HTTP POST, schema v1, local only
+                          ▼
+        kinetiq_receiver.py (laptop, port 8000) ── SSE + poll ── dashboard
 ```
 
-## Quickstart (verified)
+No internet needed at demo time: the phone reaches the laptop over USB
+(`adb reverse`) or the local LAN.
 
-```sh
-cd backend
-# copy config.example.json -> config.json with a strong token (or set KINETIQ_TOKEN)
-python kinetiq_receiver.py            # dashboard: http://127.0.0.1:8000
-python -m unittest discover -s . -v  # 17 tests
-python mock_sender.py --count 3       # SIMULATED pipeline check
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `backend/` | Receiver (stdlib HTTP, schema v1, SSE) + 20 unit tests + mock sender |
+| `web/` | Dashboard front-end |
+| `kinetiq-streamer/` | **Presentation app**: AccessibilityService reader for Health's home screen |
+| `ble-diagnostic/` | Diagnostic app: BLE scan/GATT dump, LPv2 probes, Wear Engine probe |
+| `android-bridge/` | HMS Health Kit source (blocked on this hardware; kept for Huawei hardware) |
+| `docs/` | Full research record: BLE field results, LPv2 deep dive, HCI crypto closure, Health app dissection, Wear Engine application, master report |
+| `start_demo.bat` / `stop_demo.bat` | One-click local demo startup/teardown (receiver + USB tunnel + dashboard) |
+
+## Quick start
+
+Laptop:
+
+```bat
+python backend\kinetiq_receiver.py          # token via KINETIQ_TOKEN or backend/config.json
+start_demo.bat                              # or: receiver + adb reverse + open dashboard
 ```
 
-## Status (2026-10-18, after Task 002)
+Phone (one-time):
 
-- Laptop side: implemented + tested (18/18 tests, live smoke OK).
-- Task 001 Android bridge: source complete, **not compiled** (no Android
-  SDK here; blocked on HMS Core in AppGallery — see Task 002).
-- Task 002 BLE investigation: research verified (CRC stage proven),
-  `ble-diagnostic/` app built for the on-device scan/GATT run; **no genuine
-  Band 6 reading obtained yet** — exact next steps and blockers:
-  `docs/FINAL_REPORT_002.md`.
+1. Install `kinetiq-streamer/app/build/outputs/apk/debug/app-debug.apk`
+2. Enable its Accessibility service (Settings -> Accessibility -> KinetiQ Streamer)
+3. Open Huawei Health on its home screen, open the app, save endpoint + token, start
+
+Receiver API: `POST /api/wearable` (schema v1, `X-KinetiQ-Token` header),
+`GET /api/wearable/latest`, `GET /` (dashboard). Example payloads and the exact
+contract are in `backend/kinetiq_receiver.py` and `docs/`.
+
+## Honesty rules kept throughout
+
+- A value is never claimed unless decoded AND cross-checked against the band /
+  Health display; missing readings are `null`, never `0`.
+- The band's pairing was never reset; Huawei Health was never modified,
+  disconnected, or bypassed.
+- No root, no Play Protect / integrity bypass, no side-loaded HMS clones.
+
+## Public-release note
+
+Device identifiers (band Bluetooth MAC, phone serial, MAC-derived device-name
+suffix) were replaced with placeholders (`02:00:00:12:34:56`, `Band 6-XXX`)
+across all documents and captured logs before publication. The encrypted HCI
+capture remains as-is otherwise; its session keys were derived from the
+pairing secret and are not included.
+
+## License
+
+MIT (see `LICENSE`).
