@@ -1,0 +1,46 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.huawei.agconnect")
+}
+
+// Fail fast rather than resolving an unverified Health Kit version.
+val healthKitVersion: String = (findProperty("healthKitVersion") as String? ?: "").trim()
+if (healthKitVersion.isEmpty() || healthKitVersion == "PUT_LATEST_VERSION_HERE") {
+    throw GradleException(
+        "Set healthKitVersion in gradle.properties to the latest version from " +
+        "https://developer.huawei.com/consumer/en/doc/development/HMSCore-Guides/version-change-history-0000001050701824"
+    )
+}
+
+android {
+    namespace = "com.kinetiq.bridge"
+    compileSdk = 33 // Android 13. HMS Health demo supports API 24-33.
+
+    defaultConfig {
+        applicationId = "com.kinetiq.bridge"
+        minSdk = 26
+        targetSdk = 33
+        versionCode = 1
+        versionName = "0.1.0-poc"
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    // Official Health Kit artifact (verified against HMS-Core/hms-health-demo-kotlin README:
+    // "implementation 'com.huawei.hms:health:{version}'").
+    implementation("com.huawei.hms:health:$healthKitVersion")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+}

@@ -1,0 +1,31 @@
+# ---- secrets & machine-specific ----
+agconnect-services.json
+**/agconnect-services.json
+local.properties
+**/local.properties
+*.keystore
+*.jks
+
+# ---- Android / Gradle ----
+.gradle/
+**/.gradle/
+build/
+**/build/
+*.apk
+*.aab
+captures/
+.cxx/
+
+# ---- IDE ----
+.idea/
+**/.idea/
+*.iml
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+
+# ---- OS ----
+Thumbs.db
+.DS_Store

@@ -1,0 +1,3 @@
+# KinetiQ laptop receiver: standard library only (no third-party installs needed).
+# Requires Python 3.11+.
+# Tests run with:  python -m unittest discover -s backend -v

@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        // Wear Engine SDK lives on Huawei's maven only. The repo blocks plain
+        // browsers but works for Gradle; it must be the last entry.
+        maven { url = uri("https://developer.huawei.com/repo/") }
+    }
+}
+rootProject.name = "KinetiQ-BLE-Diagnostic"
+include(":app")

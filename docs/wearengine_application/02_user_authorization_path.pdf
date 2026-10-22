@@ -1,0 +1,60 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1590 >>
+stream
+BT /F1 11 Tf 54 800 Td 14 TL
+(User authorization path description - KinetiQ BLE Diag \(individual developer\)) Tj T*
+(========================================================================) Tj T*
+() Tj T*
+(App name: KinetiQ BLE Diag) Tj T*
+(Package name: com.kinetiq.blediag) Tj T*
+(App ID: 119406053) Tj T*
+() Tj T*
+(Authorization flow:) Tj T*
+(1. The user opens KinetiQ BLE Diag. The main screen shows, among other) Tj T*
+(   diagnostic actions, one button labelled 'wearEngine probe'.) Tj T*
+(2. When the user taps that button, the app calls the Wear Engine) Tj T*
+(   requestPermission API. The Huawei Health app then displays the) Tj T*
+(   standard system authorization screen which lists the requested) Tj T*
+(   permission 'Basic device information'.) Tj T*
+(3. The user taps Allow \(or Deny\) on the Health authorization screen.) Tj T*
+(   The result is returned to the app, which shows one line of text) Tj T*
+(   locally \(device list, or a failure note\).) Tj T*
+() Tj T*
+(No background or silent authorization is used, and authorization is) Tj T*
+(never re-requested automatically; it happens only when the user taps) Tj T*
+(the button. The user can revoke the permission at any time from the) Tj T*
+(Huawei Health app settings or by denying the dialog.) Tj T*
+() Tj T*
+(Screenshots: the app's main screen \(showing the 'wearEngine probe') Tj T*
+(button\) is attached. The Health authorization dialog itself appears) Tj T*
+(only after the service application is approved; its standard layout) Tj T*
+(will be used unchanged \(per attachment disabled during review\).) Tj T*
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1953
+%%EOF

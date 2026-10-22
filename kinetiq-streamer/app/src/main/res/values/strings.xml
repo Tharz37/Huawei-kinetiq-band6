@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KinetiQ Streamer</string>
+    <string name="subtitle">Genuine Huawei Health UI readings → local KinetiQ receiver. No simulation.</string>
+
+    <string name="accessibility_service_label">KinetiQ Streamer</string>
+    <string name="accessibility_service_description">Reads the heart rate, blood oxygen and stress values that Huawei Health shows on its home screen and forwards only those visible readings to the local KinetiQ receiver. Nothing is simulated or typed: if a value is not on screen it is sent as empty.</string>
+
+    <string name="section_receiver">Receiver</string>
+    <string name="label_endpoint">Endpoint URL (POST target)</string>
+    <string name="hint_endpoint">http://127.0.0.1:8000/api/wearable</string>
+    <string name="label_token">Access token (X-KinetiQ-Token)</string>
+    <string name="save">Save</string>
+    <string name="test_connection">Test connection</string>
+    <string name="not_tested">Connection not tested yet. The test only sends a GET.</string>
+
+    <string name="section_service">Accessibility service</string>
+    <string name="status_unknown">Checking…</string>
+    <string name="open_accessibility">Open accessibility settings</string>
+    <string name="open_health">Open Huawei Health</string>
+
+    <string name="section_streaming">Streaming</string>
+    <string name="start_streaming">Start streaming</string>
+    <string name="stop_streaming">Stop streaming</string>
+
+    <string name="section_last">Last posted reading</string>
+    <string name="no_reading">No reading posted yet.</string>
+    <string name="dash">—</string>
+
+    <string name="demo_hint">Demo: 1) run the receiver on the laptop, 2) connect USB and run "adb reverse tcp:8000 tcp:8000" (or set the laptop LAN URL), 3) enable the accessibility service, 4) Start streaming, 5) open Huawei Health and leave its home screen visible. Values are read from the screen only; missing values are sent as null, never 0.</string>
+</resources>

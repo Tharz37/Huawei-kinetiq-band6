@@ -1,0 +1,38 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.kinetiq.blediag"
+    // compileSdk 34 required by androidx 2.7.x AAR metadata; targetSdk stays
+    // 33 (Android 13) so runtime behaviour targets the phone's version.
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.kinetiq.blediag"
+        // API 31+ only: Bluetooth runtime permissions exist since 12, so the
+        // pre-31 location-permission path is intentionally not used.
+        minSdk = 31
+        targetSdk = 33
+        versionCode = 2
+        versionName = "0.4.0-wearengine-probe"
+    }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.core:core-ktx:1.10.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // Wear Engine: DeviceClient/MonitorClient/SensorClient. 5.0.3.300 is the
+    // newest published version (repo serves no maven-metadata.xml, so a
+    // concrete pin is required; verified by probing the POM URLs).
+    implementation("com.huawei.hms:wearengine:5.0.3.300")
+}

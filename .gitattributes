@@ -1,0 +1,13 @@
+* text=auto
+
+# binary formats — never apply line-ending conversion
+*.pdf binary
+*.pptx binary
+*.xlsx binary
+*.jar binary
+*.apk binary
+*.png binary
+*.jpg binary
+
+# Windows scripts
+*.bat text eol=crlf

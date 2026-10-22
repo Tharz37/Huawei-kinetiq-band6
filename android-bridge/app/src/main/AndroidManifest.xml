@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Phone -> laptop upload over trusted local Wi-Fi. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="false"
+        android:label="KinetiQ Bridge"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <!--
+          Replace with the App ID from AppGallery Connect (Project settings).
+          Documented pattern: value must be "appid=<your numeric app id>".
+          The agconnect-services.json file (gitignored) carries the same ID.
+        -->
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="appid=YOUR_APP_ID_HERE" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

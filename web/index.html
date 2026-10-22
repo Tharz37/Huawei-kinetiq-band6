@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KinetiQ — Wellness Mirror Dashboard</title>
+<!--
+  KinetiQ dashboard. NOTE on hosting: this page is served by the laptop's
+  local backend (backend/kinetiq_receiver.py), which is what receives phone
+  data and pushes live updates over SSE. A purely static host cannot receive
+  incoming phone data, so for this proof of concept do NOT upload this page
+  to public hosting and expect live readings — serve it from the laptop.
+-->
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --txt:#e6edf3;
+          --dim:#8b949e; --live:#3fb950; --stale:#d29922; --off:#f85149;
+          --acc:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font-family:"Segoe UI",system-ui,Arial,sans-serif; }
+  header { padding:20px 28px; border-bottom:1px solid var(--line);
+           display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:22px; letter-spacing:.5px; }
+  header h1 span { color:var(--acc); }
+  .wrap { max-width:1060px; margin:0 auto; padding:24px 20px 60px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+          gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:18px 20px; }
+  .card h2 { margin:0 0 4px; font-size:13px; text-transform:uppercase;
+             letter-spacing:1px; color:var(--dim); }
+  .big { font-size:52px; font-weight:700; line-height:1.1; }
+  .unit { font-size:16px; color:var(--dim); font-weight:400; }
+  .meta { color:var(--dim); font-size:13px; margin-top:8px; }
+  .pill { display:inline-block; padding:3px 12px; border-radius:999px;
+          font-size:12px; font-weight:700; letter-spacing:.6px; }
+  .p-live { background:rgba(63,185,80,.15); color:var(--live);
+            border:1px solid var(--live); }
+  .p-hist { background:rgba(88,166,255,.15); color:var(--acc);
+            border:1px solid var(--acc); }
+  .p-stale { background:rgba(210,153,34,.15); color:var(--stale);
+             border:1px solid var(--stale); }
+  .p-off, .p-unav { background:rgba(248,81,73,.12); color:var(--off);
+             border:1px solid var(--off); }
+  .p-denied { background:rgba(248,81,73,.25); color:#fff;
+              border:1px solid var(--off); }
+  .p-sim { background:repeating-linear-gradient(45deg,#3a2b00,#3a2b00 8px,#241c00 8px,#241c00 16px);
+           color:#ffd76a; border:1px dashed #d29922; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+         margin-top:10px; }
+  .src { font-size:12px; color:var(--dim); }
+  #bridge { margin-left:auto; font-size:13px; display:flex; gap:8px; align-items:center; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--off); }
+  .dot.on { background:var(--live); }
+  footer { color:var(--dim); font-size:12px; text-align:center; padding:24px; }
+  .warn { background:rgba(210,153,34,.08); border:1px solid var(--stale);
+          border-radius:10px; padding:12px 16px; margin:16px 0; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>KINETIQ</span> · Wellness Mirror</h1>
+  <div id="bridge"><span class="dot" id="bridgeDot"></span><span id="bridgeTxt">bridge: connecting…</span></div>
+</header>
+
+<div class="wrap">
+  <div class="warn">
+    Wellness estimates only — not medical advice. Values labelled
+    <strong>SIMULATED</strong> are mock data for pipeline testing, never real sensor readings.
+  </div>
+
+  <!-- ============ GENUINE wearable stream : Huawei Band 6 ============ -->
+  <div class="card" id="realCard">
+    <h2>Wearable · Heart &amp; SpO₂</h2>
+    <div class="grid">
+      <div>
+        <div class="big"><span id="hr">—</span> <span class="unit">BPM</span></div>
+        <div class="row"><span class="pill p-off" id="hrPill">NO DATA</span></div>
+      </div>
+      <div>
+        <div class="big"><span id="spo2">—</span> <span class="unit">% SpO₂</span></div>
+        <div class="row"><span class="pill p-off" id="spo2Pill">NO DATA</span></div>
+      </div>
+      <div>
+        <div class="big"><span id="stress">—</span> <span class="unit">stress /100</span></div>
+        <div class="row"><span class="pill p-off" id="stressPill">NO DATA</span></div>
+      </div>
+    </div>
+    <div class="meta" id="realMeta">Waiting for the first genuine reading…</div>
+    <div class="row">
+      <span class="pill p-off" id="freshPill">OFFLINE</span>
+      <span class="src" id="srcLine">Source: awaiting first genuine reading · phone→laptop LAN</span>
+    </div>
+    <div class="row"><span class="pill p-denied" id="permPill" style="display:none">PHONE: PERMISSION DENIED</span></div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- ============ SIMULATED stream (mock pipeline test, kept separate) ============ -->
+  <div class="card" id="simCard" style="display:none">
+    <h2>Pipeline test feed</h2>
+    <div class="row"><span class="pill p-sim">SIMULATED — MOCK DATA, NOT A REAL READING</span></div>
+    <div class="meta" id="simMeta">—</div>
+  </div>
+</div>
+
+<footer>KinetiQ minor project · telemetry schema v1 · laptop-local dashboard</footer>
+
+<script>
+"use strict";
+// Static-hosting note: live updates below only work when this page is served
+// by backend/kinetiq_receiver.py (same origin /api/*). On plain static hosting
+// there is no backend to receive phone data or push SSE.
+const $ = id => document.getElementById(id);
+let lastEventAt = 0, lastBridgeSeen = 0;
+
+function ago(iso) {
+  if (!iso) return "never";
+  const s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 5) return "just now";
+  if (s < 60) return s + "s ago";
+  return Math.floor(s / 60) + "m " + (s % 60) + "s ago";
+}
+function setPill(el, text, cls) { el.textContent = text; el.className = "pill " + cls; }
+
+function paintValue(el, pill, value, mode, unitLabel, unavailableText) {
+  if (value === null || value === undefined || mode === "unavailable") {
+    el.textContent = "—";
+    setPill(pill, unavailableText || ("NO " + unitLabel), "p-off");
+  } else if (mode === "realtime") {
+    el.textContent = value;
+    setPill(pill, "LIVE · " + unitLabel, "p-live");
+  } else {
+    el.textContent = value;
+    setPill(pill, "HISTORICAL · " + unitLabel, "p-hist");
+  }
+}
+
+function paintSnapshot(snap) {
+  const r = snap.real;
+  if (r) {
+    paintValue($("hr"), $("hrPill"), r.heart_rate_bpm, r.heart_rate_mode, "BPM");
+    if (r.spo2_percent === null || r.spo2_percent === undefined) {
+      $("spo2").textContent = "—";
+      setPill($("spo2Pill"), r.spo2_mode === "unsupported" ? "UNSUPPORTED ON DEVICE" : "NO DATA", "p-off");
+    } else {
+      paintValue($("spo2"), $("spo2Pill"), r.spo2_percent, r.spo2_mode, "SpO₂");
+    }
+    // Stress (Task 003): score 0-100, higher = more tension. Null stays null.
+    if (r.stress_score === null || r.stress_score === undefined) {
+      $("stress").textContent = "—";
+      setPill($("stressPill"), r.stress_mode === "unsupported" ? "UNSUPPORTED ON DEVICE" : "NO DATA", "p-off");
+    } else {
+      paintValue($("stress"), $("stressPill"), r.stress_score, r.stress_mode, "stress /100");
+    }
+    $("realMeta").textContent =
+      "Last genuine update " + ago(r.timestamp) + " · mode HR:" + r.heart_rate_mode +
+      " SpO₂:" + r.spo2_mode + (r.stress_mode ? " stress:" + r.stress_mode : "") +
+      (r.device_model ? " · " + r.device_model : "");
+    const f = (snap.real_freshness || "offline").toUpperCase();
+    setPill($("freshPill"), f === "LIVE" ? "REAL-TIME" : f,
+             f === "LIVE" ? "p-live" : f === "STALE" ? "p-stale" : "p-off");
+    // Source + transport attribution (Task 002: HMS vs BLE probe paths).
+    const srcMap = {
+      "huawei_band_6": "Huawei Band 6 · HMS Health Kit",
+      "huawei_band_6_ble": "Huawei Band 6 · BLE (Link protocol v2)",
+    };
+    const transportMap = {
+      "hms_health_kit": "HMS Health Service Kit",
+      "ble_lpv2": "Bluetooth LE · LPv2 protocol probe",
+    };
+    $("srcLine").textContent =
+      (srcMap[r.source] || "source " + (r.source || "unknown")) +
+      " · " + (transportMap[r.transport] || "transport: unspecified") +
+      " · phone→laptop LAN";
+    const denied = r.status === "permission_denied";
+    $("permPill").style.display = denied ? "" : "none";
+    if (denied) setPill($("freshPill"), "PERMISSION DENIED ON PHONE", "p-denied");
+    if (r.status === "unsupported") setPill($("freshPill"), "READING UNSUPPORTED", "p-stale");
+  }
+  const s = snap.simulated;
+  if (s) {
+    $("simCard").style.display = "";
+    $("simMeta").textContent =
+      "SIMULATED hr=" + s.heart_rate_bpm + " spo2=" + s.spo2_percent +
+      " · received " + ago(snap.server_time) + " · mock pipeline test only";
+  }
+  if (snap.bridge_last_seen) lastBridgeSeen = new Date(snap.bridge_last_seen).getTime();
+  lastEventAt = Date.now();
+}
+
+async function poll() {
+  try {
+    const res = await fetch("/api/wearable/latest", {cache: "no-store"});
+    if (res.ok) paintSnapshot(await res.json());
+  } catch (e) { /* bridge indicator below reflects the outage */ }
+}
+
+function tickBridge() {
+  const sseOk = (Date.now() - lastEventAt) < 25000;
+  const phoneOk = lastBridgeSeen && (Date.now() - lastBridgeSeen) < 130000;
+  const dot = $("bridgeDot"), txt = $("bridgeTxt");
+  if (sseOk && phoneOk) {
+    dot.className = "dot on"; txt.textContent = "bridge: connected · phone posting";
+  } else if (sseOk) {
+    dot.className = "dot"; txt.textContent = "bridge: waiting for phone data…";
+  } else {
+    dot.className = "dot"; txt.textContent = "bridge: disconnected — check laptop server";
+  }
+}
+
+(function connectSSE() {
+  try {
+    const es = new EventSource("/api/events");
+    // Any event -> re-poll the authoritative snapshot (simple + race-free).
+    es.onmessage = () => poll();
+    es.onerror = () => { /* poll fallback keeps UI alive; tickBridge shows outage */ };
+  } catch (e) { /* EventSource unsupported -> poll only */ }
+})();
+
+poll();
+setInterval(poll, 5000);      // fallback / catch-up even with SSE live
+setInterval(tickBridge, 2000); // connection indicator + stale ageing
+setInterval(() => { if ($("realMeta").textContent.startsWith("Last genuine"))
+  poll(); }, 10000);
+</script>
+</body>
+</html>

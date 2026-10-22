@@ -1,0 +1,37 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.kinetiq.streamer"
+    // compileSdk 34 is required by the appcompat AAR metadata; targetSdk stays
+    // 33 so runtime behaviour matches the demo phone (Android 13).
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.kinetiq.streamer"
+        minSdk = 31
+        targetSdk = 33
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    buildTypes {
+        release { minifyEnabled = false }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+}
+
+dependencies {
+    // UI only. Networking is plain java.net.HttpURLConnection, scheduling is
+    // plain Handler/Thread: no HTTP or coroutine libraries in this app.
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
+    testImplementation("junit:junit:4.13.2")
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 12/13 Bluetooth permissions. neverForLocation: we do not
+         derive location from scans, so location permission is not needed. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Android 11+ package visibility: the Wear Engine SDK binds a service
+         hosted by com.huawei.health, so the package must be visible. -->
+    <queries>
+        <package android:name="com.huawei.health" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:label="KinetiQ BLE Diag"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
+        <!-- Wear Engine caller identity (AppGallery Connect app). Health
+             validates package + signing cert + app id before serving calls. -->
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="appid=119406053" />
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

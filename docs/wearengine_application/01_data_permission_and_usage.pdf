@@ -1,0 +1,59 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1526 >>
+stream
+BT /F1 11 Tf 54 800 Td 14 TL
+(Data permission and usage description - KinetiQ BLE Diag \(individual developer\)) Tj T*
+(========================================================================) Tj T*
+() Tj T*
+(App name: KinetiQ BLE Diag) Tj T*
+(Package name: com.kinetiq.blediag) Tj T*
+(App ID: 119406053) Tj T*
+(Developer type: individual \(university coursework\)) Tj T*
+() Tj T*
+(Requested data permission: Basic device information \(DEVICE_MANAGER\)) Tj T*
+() Tj T*
+(Purpose and usage:) Tj T*
+(KinetiQ BLE Diag is an academic Bluetooth/wearables diagnostic application) Tj T*
+(developed as university coursework \(KinetiQ project\). Within the Wear) Tj T*
+(Engine scope, it calls DeviceClient.getBondedDevices\(\) to obtain the list) Tj T*
+(of the user's paired Huawei wearable devices \(device identifiers, model,) Tj T*
+(connection status\), so that the user can explicitly select the device) Tj T*
+(whose diagnostics are being performed. It may optionally subscribe to the) Tj T*
+(device connection status through MonitorClient while the app screen is) Tj T*
+(open.) Tj T*
+() Tj T*
+(All processing is performed on the device and is read-only. The app does) Tj T*
+(not read, store or transmit any health metrics through Wear Engine, does) Tj T*
+(not modify device settings, and does not send files to the device. The) Tj T*
+(Huawei Health app hosts the communication channel; this app only displays) Tj T*
+(diagnostic results locally on its own screen. No data is shared with any) Tj T*
+(third party or server.) Tj T*
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1889
+%%EOF
