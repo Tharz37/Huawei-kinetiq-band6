@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>KinetiQ · Home Edition</title>
+<style>
+:root{
+  --bg:#060d12;
+  --panel:#0d1c25;
+  --panel-2:#10232c;
+  --tile:#0b1b23;
+  --line:#17313a;
+  --line-soft:#122a32;
+  --text:#e6f2f0;
+  --text-2:#b4c9cb;
+  --muted:#7f9a9e;
+  --muted-2:#5d777c;
+  --accent:#8fe6dc;
+  --accent-2:#4fd1c5;
+  --accent-soft:rgba(79,209,197,.10);
+  --good:#58d68d;
+  --warn:#e6b85c;
+  --bad:#e4746a;
+  --radius:20px;
+  --radius-sm:14px;
+  --shadow:0 24px 60px rgba(0,0,0,.24);
+  --ease:180ms ease;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;height:100vh;min-height:0;overflow:hidden;
+  background:var(--bg);color:var(--text);
+  font-family:"Segoe UI Variable Text","Segoe UI Variable","Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;
+  gap:14px;padding:0 26px;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(1100px 560px at 15% -12%,rgba(43,137,141,.13),transparent 62%),
+    radial-gradient(900px 500px at 102% -4%,rgba(34,94,101,.10),transparent 58%),
+    linear-gradient(180deg,rgba(9,18,23,.55),transparent 34%);
+}
+button,input{font:inherit}
+button{color:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible{
+  outline:2px solid rgba(143,230,220,.7);outline-offset:2px;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.is-hidden{display:none!important}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:16px 2px 10px;min-width:0;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{
+  width:38px;height:38px;flex:0 0 auto;border:1.4px solid rgba(230,242,240,.9);
+  border-radius:12px;display:grid;place-items:center;color:var(--text);
+  box-shadow:inset 0 0 0 1px rgba(143,230,220,.08);
+}
+.brand-mark svg{width:22px;height:22px;display:block}
+.brand-copy{display:flex;flex-direction:column;min-width:0}
+.brand-name{font-size:21px;font-weight:600;letter-spacing:.01em;line-height:1.1}
+.brand-edition{
+  margin-top:3px;font-size:9.5px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+}
+.topbar-right{display:flex;align-items:center;gap:13px;min-width:0}
+.welcome{font-size:12.5px;color:var(--text-2);white-space:nowrap}
+.clock{
+  font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.status{
+  display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;
+  border:1px solid var(--line);border-radius:999px;background:rgba(16,35,44,.62);
+  padding:8px 13px;font-size:11.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--text-2);cursor:default;white-space:nowrap;
+  transition:border-color var(--ease),background var(--ease),color var(--ease);
+}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);flex:0 0 auto}
+.status[data-state="live"]{border-color:rgba(88,214,141,.34);background:rgba(88,214,141,.07);color:#bfecca}
+.status[data-state="live"] .dot{background:var(--good);box-shadow:0 0 0 4px rgba(88,214,141,.10)}
+.status[data-state="stale"]{border-color:rgba(230,184,92,.34);background:rgba(230,184,92,.07);color:#ecd39a}
+.status[data-state="stale"] .dot{background:var(--warn)}
+.status[data-state="offline"]{border-color:rgba(228,116,106,.28);background:rgba(228,116,106,.05);color:#dfaaa4}
+.status[data-state="offline"] .dot{background:var(--bad)}
+.status[data-state="waiting"] .dot{background:var(--accent-2);box-shadow:0 0 0 4px rgba(79,209,197,.08)}
+.status[data-state="sample"]{border-color:rgba(143,230,220,.26);background:rgba(143,230,220,.06);color:#c8efea}
+.status[data-state="sample"] .dot{background:var(--accent-2)}
+.ask-btn{
+  border:1px solid var(--line);border-radius:999px;background:transparent;
+  color:var(--text-2);padding:8px 13px;font-size:11.5px;font-weight:600;
+  cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);
+  white-space:nowrap;
+}
+.ask-btn:hover:not(:disabled){background:rgba(143,230,220,.07);border-color:rgba(143,230,220,.28);color:var(--text)}
+.ask-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid;grid-template-columns:minmax(0,1.55fr) minmax(370px,1fr);
+  gap:18px;min-height:0;
+}
+.panel{
+  min-width:0;min-height:0;background:linear-gradient(180deg,rgba(18,38,47,.93),rgba(10,25,32,.97));
+  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.preview{padding:0;overflow:hidden;position:relative}
+.preview-stage{position:absolute;inset:0;overflow:hidden;background:
+  radial-gradient(120% 90% at 50% 35%,#17333b 0%,#0a1a21 52%,#061015 100%);
+}
+.preview-stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(3,10,14,.30) 0%,rgba(3,10,14,0) 28%,rgba(3,10,14,0) 52%,rgba(3,10,14,.84) 100%);
+}
+.camera{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform:scaleX(-1);opacity:0;transition:opacity 500ms ease;
+  background:#020708;
+}
+.preview-stage.is-live .camera{opacity:1}
+.preview-stage.is-live .preview-placeholder{opacity:0}
+.preview-placeholder{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:38px 28px;transition:opacity 450ms ease;
+}
+.halo{
+  position:absolute;width:clamp(300px,46vh,560px);aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(143,230,220,.13);
+  box-shadow:0 0 80px rgba(79,209,197,.06),inset 0 0 60px rgba(79,209,197,.035);
+}
+.halo::before,.halo::after{
+  content:"";position:absolute;border-radius:50%;border:1px solid rgba(143,230,220,.08);
+}
+.halo::before{inset:14%}
+.halo::after{inset:30%}
+.placeholder-mark{
+  position:relative;z-index:1;width:56px;height:56px;border:1px solid rgba(230,242,240,.55);
+  border-radius:16px;display:grid;place-items:center;margin-bottom:18px;
+  background:rgba(6,20,25,.45);backdrop-filter:blur(4px);color:var(--text);
+}
+.placeholder-mark svg{width:28px;height:28px}
+.placeholder-title{
+  position:relative;z-index:1;margin:0;font-size:17px;font-weight:500;color:var(--text-2);
+}
+.placeholder-copy{
+  position:relative;z-index:1;margin:6px 0 0;max-width:340px;font-size:12px;line-height:1.55;color:var(--muted);
+}
+.preview-top{
+  position:absolute;z-index:2;top:18px;left:18px;right:18px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  border:1px solid rgba(180,220,220,.18);border-radius:999px;
+  background:rgba(5,16,21,.55);backdrop-filter:blur(8px);
+  padding:7px 11px;font-size:9.5px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:#d8e9e7;
+}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-2)}
+.pill[data-state="live"]{border-color:rgba(88,214,141,.38);color:#c9efd4}
+.pill[data-state="live"] .dot{background:var(--good);box-shadow:0 0 0 4px rgba(88,214,141,.10)}
+.pill[data-state="sample"]{border-color:rgba(143,230,220,.32);color:#d6f3ef}
+.pill[data-state="sample"] .dot{background:var(--accent-2)}
+.preview-bottom{
+  position:absolute;z-index:2;left:24px;right:24px;bottom:22px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+}
+.preview-caption{min-width:0}
+.kicker{
+  font-size:9.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(214,235,233,.72);
+}
+.greeting{
+  margin:6px 0 0;font-size:clamp(25px,3.4vh,42px);font-weight:500;
+  letter-spacing:-.02em;line-height:1.08;color:#f0faf8;
+}
+.greeting-note{margin:5px 0 0;font-size:11.5px;color:rgba(214,235,233,.62)}
+.btn{
+  border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);
+  padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background var(--ease),border-color var(--ease),color var(--ease),opacity var(--ease);
+}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.05);border-color:var(--line-soft)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-light{
+  background:rgba(7,22,28,.58);border-color:rgba(180,220,220,.24);color:#e7f5f2;
+  backdrop-filter:blur(8px);
+}
+.btn-light:hover:not(:disabled){background:rgba(16,42,50,.82);border-color:rgba(180,220,220,.4)}
+.btn-primary{
+  background:var(--accent);border-color:transparent;color:#06201f;font-weight:700;
+}
+.btn-primary:hover:not(:disabled){background:#b0f1e8;border-color:transparent}
+
+/* ---------- snapshot ---------- */
+.snapshot{padding:19px 21px;display:flex;flex-direction:column;gap:13px;overflow:hidden}
+.snapshot-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.eyebrow{
+  font-size:9.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);line-height:1.2;
+}
+.snapshot-title{
+  margin:4px 0 0;font-size:24px;font-weight:500;letter-spacing:-.015em;line-height:1.12;
+}
+.pill-outline{
+  border:1px solid var(--line);border-radius:999px;background:transparent;
+  padding:7px 11px;font-size:9.5px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;flex:0 0 auto;
+}
+.pill-outline[data-state="live"]{border-color:rgba(88,214,141,.32);color:#bdeac9;background:rgba(88,214,141,.055)}
+.pill-outline[data-state="stale"]{border-color:rgba(230,184,92,.32);color:#ecd39a;background:rgba(230,184,92,.055)}
+.pill-outline[data-state="offline"]{border-color:rgba(228,116,106,.26);color:#dfaaa4}
+.pill-outline[data-state="sample"]{border-color:rgba(143,230,220,.25);color:#c6ece8;background:rgba(143,230,220,.045)}
+.tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;
+  background:#07161c;border:1px solid var(--line);border-radius:12px;flex:0 0 auto;
+}
+.tab{
+  border:0;border-radius:8px;background:transparent;color:var(--muted);
+  padding:8px 10px;font-size:11.5px;font-weight:600;cursor:pointer;
+  transition:background var(--ease),color var(--ease),box-shadow var(--ease);
+}
+.tab:hover{color:var(--text-2)}
+.tab.is-active{
+  background:#12343a;color:#c9f3ec;box-shadow:inset 0 0 0 1px rgba(143,230,220,.14);
+}
+.view{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:11px}
+.metric-grid{
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,clamp(88px,12.5vh,132px));
+  gap:10px;min-height:0;flex:0 0 auto;
+}
+.metric{
+  min-width:0;padding:12px 14px 11px;border:1px solid var(--line-soft);
+  border-radius:var(--radius-sm);background:linear-gradient(180deg,rgba(17,38,47,.68),rgba(9,24,31,.68));
+  display:flex;flex-direction:column;justify-content:flex-start;
+}
+.metric-label,.link-label{
+  font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.metric-value{display:flex;align-items:baseline;gap:5px;margin-top:3px;min-width:0}
+.metric-value b{
+  font-size:clamp(25px,3.5vh,40px);font-weight:500;line-height:1.04;
+  letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.metric-value em{
+  font-style:normal;font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap;
+}
+.metric-sub{
+  display:flex;align-items:center;gap:6px;margin-top:5px;min-width:0;
+  font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.metric-sub::before{
+  content:"";width:4px;height:4px;border-radius:50%;background:currentColor;
+  opacity:.75;flex:0 0 auto;
+}
+.metric.is-missing .metric-sub{color:var(--muted-2)}
+.metric.is-missing .metric-sub::before{opacity:.4}
+body[data-state="live"] .metric .metric-sub{color:#9eb9b8}
+body[data-state="live"] .metric .metric-sub::before{background:var(--accent-2);opacity:.9}
+body[data-state="stale"] .metric .metric-sub{color:#cfb47c}
+body[data-state="stale"] .metric .metric-sub::before{background:var(--warn)}
+.metric.is-missing .metric-sub{color:var(--muted-2)!important}
+.metric.is-missing .metric-sub::before{background:var(--muted-2)!important;opacity:.4!important}
+.link-card{
+  padding:12px 14px 11px;border:1px solid var(--line-soft);
+  border-radius:var(--radius-sm);background:rgba(9,24,31,.62);min-width:0;
+}
+.link-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mini-state{
+  display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+.mini-state::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.mini-state[data-state="live"]{color:var(--good)}
+.mini-state[data-state="stale"]{color:var(--warn)}
+.mini-state[data-state="offline"]{color:var(--bad)}
+.mini-state[data-state="sample"]{color:var(--accent)}
+.link-card-main{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:5px}
+.link-title{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-age{font-size:10.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto}
+.link-meter{height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin:8px 0 7px}
+.link-meter span{display:block;height:100%;width:0;background:var(--accent-2);border-radius:2px;transition:width 500ms ease,background var(--ease)}
+body[data-state="stale"] .link-meter span{background:var(--warn)}
+body[data-state="offline"] .link-meter span{background:var(--bad)}
+body[data-state="sample"] .link-meter span{background:var(--accent)}
+.link-card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10.5px;color:var(--muted-2);min-width:0}
+.link-card-foot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-card-foot span:last-child{flex:0 0 auto}
+.trend-card{display:none;padding:11px 14px 9px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);background:rgba(9,24,31,.5);min-width:0}
+.trend-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.trend-note{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);white-space:nowrap}
+.spark{width:100%;height:52px;display:block;margin-top:2px;overflow:visible}
+.spark .line{fill:none;stroke:var(--accent-2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.spark .area{fill:url(#sparkFade);stroke:none}
+.spark .dot{fill:var(--accent);stroke:var(--panel);stroke-width:1.4}
+.trend-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:9.5px;color:var(--muted-2);min-width:0}
+.trend-foot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-height:1000px){
+  .trend-card{display:flex;flex-direction:column;gap:3px}
+}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin:0;flex:1 1 auto;min-height:0;align-content:start}
+.detail-grid > div{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:8px 0;border-bottom:1px solid var(--line-soft);min-width:0;
+}
+.detail-grid dt{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.detail-grid dd{margin:0;font-size:12px;color:var(--text-2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.detail-grid dd.is-missing{color:var(--muted-2)}
+.fine{font-size:10.5px;line-height:1.5;color:var(--muted-2);margin:0}
+.snapshot-foot{margin:0;padding-top:2px;font-size:9.5px;letter-spacing:.02em;color:var(--muted-2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- guidance ---------- */
+.guidance{padding:15px 21px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.guidance-top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;min-width:0}
+.guidance-title{margin:3px 0 0;font-size:19px;font-weight:500;letter-spacing:-.01em;line-height:1.2}
+.guidance-note{max-width:46%;text-align:right;line-height:1.45}
+.guidance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;min-height:0;flex:1 1 auto}
+.guidance-card{
+  min-width:0;padding:0 20px;border-left:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:5px;transition:opacity var(--ease),transform var(--ease);
+}
+.guidance-card:first-child{border-left:0;padding-left:0}
+.guidance-card:last-child{padding-right:0}
+.guidance-card.is-dismissing{opacity:0;transform:translateY(4px)}
+.guidance-meta{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.guidance-time,.guidance-category{
+  font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted-2);white-space:nowrap;
+}
+.guidance-category{color:var(--muted)}
+.guidance-card h3{margin:0;font-size:14px;font-weight:500;color:var(--text);line-height:1.35}
+.guidance-body{margin:0;font-size:12px;line-height:1.48;color:var(--text-2);max-height:3.1em;overflow:hidden;max-width:42ch}
+.link-btn{
+  align-self:flex-start;border:0;border-bottom:1px solid rgba(143,230,220,.38);
+  background:transparent;color:var(--accent);padding:0 0 1px;margin-top:2px;
+  font-size:10.5px;font-weight:600;cursor:pointer;transition:border-color var(--ease),color var(--ease);
+}
+.link-btn:hover{border-color:var(--accent);color:#c9f5ef}
+.guidance-empty{
+  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;text-align:center;color:var(--muted);font-size:12px;
+}
+.guidance-empty p{margin:0}
+
+/* ---------- footer ---------- */
+.footer{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  border-top:1px solid var(--line-soft);padding:10px 2px 13px;
+  font-size:10.5px;line-height:1.4;color:var(--muted-2);min-width:0;
+}
+.footer span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.footer-right{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.footer-right .dot-sep{color:var(--muted-2);opacity:.55}
+.footer a{color:var(--muted);border-bottom:1px solid rgba(143,230,220,.18)}
+.footer a:hover{color:var(--accent);text-decoration:none;border-color:var(--accent)}
+
+/* ---------- ask modal ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px}
+.modal-backdrop{position:absolute;inset:0;background:rgba(3,9,12,.72);backdrop-filter:blur(6px)}
+.modal-card{
+  position:relative;z-index:1;width:min(540px,100%);max-height:min(640px,90vh);
+  display:flex;flex-direction:column;gap:12px;padding:18px;
+  background:linear-gradient(180deg,#0e222b,#0a1a22);border:1px solid var(--line);
+  border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.5);
+}
+.modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.modal-title{margin:4px 0 0;font-size:20px;font-weight:500;letter-spacing:-.01em}
+.icon-btn{
+  width:30px;height:30px;flex:0 0 auto;border:1px solid var(--line);border-radius:8px;
+  background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;transition:background var(--ease),color var(--ease);
+}
+.icon-btn:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.ask-messages{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:80px;max-height:300px;padding-right:2px}
+.ask-message{
+  max-width:94%;padding:9px 11px;border:1px solid var(--line-soft);border-radius:10px;
+  background:rgba(255,255,255,.025);font-size:12px;line-height:1.5;color:var(--text-2);
+}
+.ask-message p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ask-message.ask-you{
+  align-self:flex-end;background:rgba(79,209,197,.07);border-color:rgba(79,209,197,.18);color:#d9f2ee;
+}
+.ask-message.ask-pending{opacity:.55}
+.grounding{
+  display:inline-block;margin-top:6px;padding:1px 6px;border-radius:3px;
+  font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+.grounding.pass{background:rgba(88,214,141,.12);color:#9fe8b8}
+.grounding.fail{background:rgba(230,184,92,.12);color:#ecd39a}
+.ask-form{display:flex;gap:8px;align-items:center}
+.ask-form input{
+  flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:10px;
+  background:#07161c;color:var(--text);padding:10px 12px;font-size:12px;
+  transition:border-color var(--ease),box-shadow var(--ease);
+}
+.ask-form input::placeholder{color:var(--muted-2)}
+.ask-form input:focus{outline:none;border-color:rgba(143,230,220,.5);box-shadow:0 0 0 3px rgba(79,209,197,.08)}
+.toast{
+  position:fixed;z-index:60;left:50%;bottom:22px;transform:translateX(-50%);
+  background:#102730;border:1px solid var(--line);border-radius:10px;
+  padding:9px 14px;font-size:12px;color:var(--text-2);box-shadow:0 16px 40px rgba(0,0,0,.4);
+  max-width:min(520px,90vw);text-align:center;
+}
+.toast.is-visible{display:block}
+.toast.is-hidden{display:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .welcome{display:none}
+}
+@media (max-width:1050px){
+  body{height:auto;min-height:100vh;overflow:auto;grid-template-rows:auto auto auto auto}
+  .layout{grid-template-columns:1fr}
+  .preview{min-height:380px}
+  .preview-stage{position:absolute}
+  .snapshot{min-height:420px}
+  .guidance-grid{grid-template-columns:1fr;gap:0}
+  .guidance-card{border-left:0;border-top:1px solid var(--line-soft);padding:10px 0}
+  .guidance-card:first-child{border-top:0;padding-top:0}
+  .guidance-card:last-child{padding-bottom:0}
+  .guidance-note{max-width:50%}
+  .footer{white-space:normal}
+  .footer span{white-space:normal}
+}
+@media (max-height:730px) and (min-width:1051px){
+  body{gap:10px;padding:0 20px}
+  .topbar{padding:10px 2px 7px}
+  .brand-mark{width:32px;height:32px;border-radius:10px}
+  .brand-mark svg{width:19px;height:19px}
+  .brand-name{font-size:19px}
+  .brand-edition{font-size:8.5px}
+  .layout{gap:14px}
+  .snapshot{padding:14px 17px;gap:9px}
+  .snapshot-title{font-size:21px}
+  .tabs{padding:3px}
+  .tab{padding:6px 8px;font-size:11px}
+  .metric{padding:9px 12px}
+  .metric-value b{font-size:clamp(23px,3.05vh,30px)}
+  .metric-sub{font-size:9.5px;margin-top:3px}
+  .link-card{padding:9px 12px}
+  .link-title{font-size:13px}
+  .guidance{padding:11px 17px 12px;gap:7px}
+  .guidance-title{font-size:16px}
+  .guidance-card h3{font-size:12.5px}
+  .guidance-body{font-size:10.5px}
+  .footer{padding:7px 2px 9px;font-size:9.5px}
+  .preview-bottom{bottom:16px;left:20px;right:20px}
+  .preview-top{top:14px;left:14px;right:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body data-state="waiting" data-sample="false">
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="10.4" stroke="currentColor" stroke-width="1.2" opacity=".92"/>
+        <circle cx="16" cy="16" r="3.1" fill="currentColor"/>
+        <path d="M16 5.6v3.1M16 23.3v3.1M5.6 16h3.1M23.3 16h3.1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".62"/>
+      </svg>
+    </span>
+    <span class="brand-copy">
+      <span class="brand-name">KinetiQ</span>
+      <span class="brand-edition">Smart mirror / Home edition</span>
+    </span>
+  </div>
+  <div class="topbar-right">
+    <span class="welcome">A moment to check in with yourself.</span>
+    <time id="clock" class="clock" datetime="">--</time>
+    <span id="statusPill" class="status" data-state="waiting" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span><span id="statusText">Connecting…</span>
+    </span>
+    <button id="askOpen" class="ask-btn" type="button" aria-haspopup="dialog">Ask</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="panel preview" aria-label="Camera preview">
+    <div class="preview-stage" id="previewStage">
+      <video id="camera" class="camera" autoplay playsinline muted aria-label="Live camera preview"></video>
+      <canvas id="motionCanvas" width="64" height="48" class="is-hidden"></canvas>
+      <div class="preview-placeholder" id="previewPlaceholder">
+        <div class="halo" aria-hidden="true"></div>
+        <div class="placeholder-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="9.4" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
+            <circle cx="16" cy="16" r="2.8" fill="currentColor"/>
+            <path d="M16 6.6v2.6M16 22.8v2.6M6.6 16h2.6M22.8 16h2.6" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity=".55"/>
+          </svg>
+        </div>
+        <p class="placeholder-title">Your mirror is ready.</p>
+        <p class="placeholder-copy">Enable the camera for a live preview. Frames stay on this device; only motion is used locally.</p>
+      </div>
+      <div class="preview-top">
+        <span id="previewBadge" class="pill" data-state="offline"><span class="dot" aria-hidden="true"></span><span id="previewBadgeText">Preview off</span></span>
+        <span id="previewNote" class="pill">Camera · on-device</span>
+      </div>
+      <div class="preview-bottom">
+        <div class="preview-caption">
+          <div class="kicker">Your space · your pace</div>
+          <h1 id="greeting" class="greeting">A quiet moment.</h1>
+          <p id="greetingNote" class="greeting-note">Enable the preview when you are ready.</p>
+        </div>
+        <button id="previewToggle" class="btn btn-light" type="button">Enable preview</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel snapshot" id="snapshot" aria-labelledby="snapshotTitle">
+    <div class="snapshot-top">
+      <div>
+        <div class="eyebrow">A gentle check-in</div>
+        <h2 id="snapshotTitle" class="snapshot-title">Your snapshot</h2>
+      </div>
+      <span id="readingPill" class="pill-outline" data-state="waiting">No reading</span>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Snapshot view">
+      <button id="tabCalm" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="calmView">Calm overview</button>
+      <button id="tabDetail" class="tab" type="button" role="tab" aria-selected="false" aria-controls="detailView">Detailed readings</button>
+    </div>
+
+    <div id="calmView" class="view" role="tabpanel" aria-labelledby="tabCalm">
+      <div class="metric-grid">
+        <article class="metric" id="metricHr">
+          <span class="metric-label">Heart rate</span>
+          <span class="metric-value"><b id="hr" class="num">—</b><em>bpm</em></span>
+          <span class="metric-sub" id="hrSub">waiting for the band</span>
+        </article>
+        <article class="metric" id="metricSpo2">
+          <span class="metric-label">SpO₂</span>
+          <span class="metric-value"><b id="spo2" class="num">—</b><em>%</em></span>
+          <span class="metric-sub" id="spo2Sub">latest completed</span>
+        </article>
+        <article class="metric" id="metricStress">
+          <span class="metric-label">Stress</span>
+          <span class="metric-value"><b id="stress" class="num">—</b><em>/100</em></span>
+          <span class="metric-sub" id="stressSub">realtime</span>
+        </article>
+        <article class="metric" id="metricSteps">
+          <span class="metric-label">Steps</span>
+          <span class="metric-value"><b id="steps" class="num">—</b><em>steps</em></span>
+          <span class="metric-sub" id="stepsSub">today</span>
+        </article>
+      </div>
+
+      <article class="link-card" aria-label="Band link state">
+        <div class="link-card-top">
+          <span class="link-label">Band link</span>
+          <span id="linkBadge" class="mini-state" data-state="waiting">Waiting</span>
+        </div>
+        <div class="link-card-main">
+          <span id="linkTitle" class="link-title">Waiting for the first reading</span>
+          <span id="linkAge" class="link-age">—</span>
+        </div>
+        <div class="link-meter" aria-hidden="true"><span id="linkFill"></span></div>
+        <div class="link-card-foot">
+          <span id="linkSource">Huawei Health · USB relay</span>
+          <span id="linkTime">—</span>
+        </div>
+      </article>
+      <article class="trend-card" id="trendCard" aria-label="Heart-rate trend">
+        <div class="trend-top">
+          <span class="link-label">Heart-rate trend</span>
+          <span id="trendNote" class="trend-note">Building</span>
+        </div>
+        <svg id="spark" class="spark" viewBox="0 0 300 54" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="sparkFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4fd1c5" stop-opacity=".16"></stop>
+              <stop offset="1" stop-color="#4fd1c5" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <path id="sparkArea" class="area" d=""></path>
+          <path id="sparkLine" class="line" d=""></path>
+          <circle id="sparkDot" class="dot" cx="0" cy="0" r="2.2" opacity="0"></circle>
+        </svg>
+        <div class="trend-foot"><span id="trendRange">—</span><span id="trendCount">—</span></div>
+      </article>
+      <p class="snapshot-foot" id="snapshotFoot">No live reading yet.</p>
+    </div>
+
+    <div id="detailView" class="view is-hidden" role="tabpanel" aria-labelledby="tabDetail">
+      <dl class="detail-grid">
+        <div><dt>Heart rate</dt><dd id="dHr">—</dd></div>
+        <div><dt>SpO₂</dt><dd id="dSpo2">—</dd></div>
+        <div><dt>Stress</dt><dd id="dStress">—</dd></div>
+        <div><dt>Steps</dt><dd id="dSteps">—</dd></div>
+        <div><dt>Reading time</dt><dd id="dTime">—</dd></div>
+        <div><dt>Relay age</dt><dd id="dAge">—</dd></div>
+        <div><dt>Source</dt><dd id="dSource">—</dd></div>
+        <div><dt>Transport</dt><dd id="dTransport">—</dd></div>
+        <div><dt>Device</dt><dd id="dDevice">—</dd></div>
+        <div><dt>Freshness</dt><dd id="dFreshness">—</dd></div>
+        <div><dt>Respiratory rate</dt><dd class="is-missing">not measured</dd></div>
+        <div><dt>Skin temperature</dt><dd class="is-missing">not measured</dd></div>
+        <div><dt>Readiness score</dt><dd class="is-missing">not measured</dd></div>
+        <div><dt>PPG quality</dt><dd class="is-missing">not relayed</dd></div>
+      </dl>
+      <p class="fine">This path relays heart rate, SpO₂, stress and steps from the Huawei Health home screen. Activity, motion and PPG signal quality are not relayed; respiratory rate, skin temperature and readiness are not measured. No values are invented.</p>
+    </div>
+  </section>
+</main>
+
+<section class="panel guidance" aria-labelledby="guidanceTitle">
+  <div class="guidance-top">
+    <div>
+      <div class="eyebrow" id="guidanceEyebrow">Gentle guidance / Live data</div>
+      <h2 id="guidanceTitle" class="guidance-title">A little guidance, in the moment</h2>
+    </div>
+    <span id="guidanceNote" class="fine guidance-note">Generated from your latest reading · not medical advice</span>
+  </div>
+  <div id="guidanceGrid" class="guidance-grid" aria-live="polite"></div>
+  <div id="guidanceEmpty" class="guidance-empty is-hidden">
+    <p id="guidanceEmptyText">Waiting for a live reading.</p>
+    <button id="guidanceReset" class="link-btn is-hidden" type="button">Reset prompts</button>
+  </div>
+</section>
+
+<footer class="footer">
+  <span id="footerLeft">Not a medical device. Values are relayed from Huawei Health; no diagnosis or treatment.</span>
+  <span class="footer-right">
+    <span id="footerRight">Camera processed on-device · no video stored</span>
+    <span class="dot-sep" aria-hidden="true">·</span>
+    <a href="/classic">Classic view</a>
+  </span>
+</footer>
+
+<div id="askModal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <div class="modal-backdrop" data-close="ask"></div>
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <div class="eyebrow">Ask the mirror</div>
+        <h2 id="askTitle" class="modal-title">A question, grounded in your snapshot</h2>
+      </div>
+      <button id="askClose" class="icon-btn" type="button" aria-label="Close assistant">×</button>
+    </div>
+    <div id="askMessages" class="ask-messages" aria-live="polite">
+      <div class="ask-message ask-mirror"><p>Ask about your latest reading. The assistant can see the relayed telemetry — heart rate, SpO₂ and steps. Stress stays in the snapshot.</p></div>
+    </div>
+    <form id="askForm" class="ask-form" autocomplete="off">
+      <label class="sr-only" for="askInput">Question</label>
+      <input id="askInput" type="text" placeholder="How am I doing?" maxlength="300">
+      <button id="askSend" class="btn btn-primary" type="submit">Send</button>
+    </form>
+    <p class="fine">Replies may take a few seconds. No voice is recorded in this view.</p>
+  </div>
+</div>
+
+<div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(window.location.search);
+  var SAMPLE_MODE = params.get('preview') === '1';
+  var POLL_MS = 1000;
+  var DISMISS_KEY = 'kinetiq.guidance.dismissed.v1';
+  var state = {
+    data: null,
+    sample: SAMPLE_MODE,
+    failures: 0,
+    camStream: null,
+    camTimer: null,
+    postTimer: null,
+    camPrev: null,
+    camEma: 0,
+    askBusy: false,
+    pollBusy: false,
+    toastTimer: null
+  };
+
+  var SAMPLE = {
+    sample: true,
+    state: 'sample',
+    ok: true,
+    freshness: 'live',
+    age_s: 0,
+    reading_ts: new Date().toISOString(),
+    error: '',
+    real: {
+      timestamp: new Date().toISOString(),
+      heart_rate_bpm: 72,
+      spo2_percent: 98,
+      stress_score: 32,
+      steps: 6240,
+      simulated: false,
+      source: 'huawei_band_6_healthapp',
+      transport: 'health_app_ui',
+      device_model: 'Huawei Band 6 (via Health UI)'
+    }
+  };
+  var SAMPLE_HISTORY = [68, 70, 69, 71, 72, 71, 72];
+
+  var STATUS_LABELS = {
+    sample: 'Sample preview',
+    live: 'Band 6 live',
+    stale: 'Band 6 stale',
+    offline: 'Band 6 offline',
+    waiting: 'Waiting for band',
+    'relay-offline': 'Relay offline'
+  };
+
+  function has(value) {
+    return value !== null && value !== undefined && value !== '';
+  }
+
+  function numberOrNull(value) {
+    if (!has(value)) { return null; }
+    var n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function fmtInt(value) {
+    var n = numberOrNull(value);
+    return n === null ? '—' : Math.round(n).toLocaleString('en-US');
+  }
+
+  function fmtHr(value) {
+    var n = numberOrNull(value);
+    return n === null ? '—' : String(Math.round(n));
+  }
+
+  function fmtSpo2(value) {
+    var n = numberOrNull(value);
+    return n === null ? '—' : String(Math.round(n));
+  }
+
+  function fmtStress(value) {
+    var n = numberOrNull(value);
+    return n === null ? '—' : String(Math.round(n));
+  }
+
+  function fmtSteps(value) {
+    var n = numberOrNull(value);
+    return n === null ? '—' : Math.round(n).toLocaleString('en-US');
+  }
+
+  function parseDate(value) {
+    if (!has(value)) { return null; }
+    var d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function fmtTime(value) {
+    var d = parseDate(value);
+    return d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—';
+  }
+
+  function fmtDateTime(value) {
+    var d = parseDate(value);
+    if (!d) { return '—'; }
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+      + ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function ageLabel(seconds) {
+    if (seconds === null || seconds === undefined || !Number.isFinite(Number(seconds))) {
+      return '—';
+    }
+    var s = Math.max(0, Math.round(Number(seconds)));
+    if (s < 5) { return 'Just now'; }
+    if (s < 60) { return s + 's ago'; }
+    if (s < 3600) { return Math.floor(s / 60) + 'm ago'; }
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    return h + 'h' + (m ? ' ' + m + 'm' : '') + ' ago';
+  }
+
+  function ageShort(seconds) {
+    var label = ageLabel(seconds);
+    return label === '—' ? label : label.toUpperCase();
+  }
+
+  function renderClock() {
+    var now = new Date();
+    var date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    var time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    var el = $('clock');
+    el.textContent = date + ', ' + time;
+    el.dateTime = now.toISOString();
+  }
+
+  function normalize(snapshot, fetchError) {
+    if (!snapshot) {
+      return {
+        state: 'relay-offline',
+        ok: false,
+        freshness: 'offline',
+        age_s: null,
+        real: null,
+        reading_ts: null,
+        error: fetchError || 'Relay unreachable'
+      };
+    }
+    var real = snapshot.real && snapshot.real.simulated === false ? snapshot.real : null;
+    var viewState = 'waiting';
+    if (!snapshot.ok) {
+      viewState = 'relay-offline';
+    } else if (!real) {
+      viewState = snapshot.error ? 'relay-offline' : 'waiting';
+    } else if (snapshot.freshness === 'live') {
+      viewState = 'live';
+    } else if (snapshot.freshness === 'stale') {
+      viewState = 'stale';
+    } else {
+      viewState = 'offline';
+    }
+    var age = numberOrNull(snapshot.age_s);
+    return {
+      state: viewState,
+      ok: !!snapshot.ok,
+      freshness: snapshot.freshness || 'offline',
+      age_s: age === null ? null : Math.max(0, Math.round(age)),
+      real: real,
+      reading_ts: real && real.timestamp ? real.timestamp : null,
+      error: snapshot.error || '',
+      history: Array.isArray(snapshot.history) ? snapshot.history : []
+    };
+  }
+
+  function normalizeSample() {
+    return {
+      state: 'sample',
+      ok: true,
+      freshness: 'live',
+      age_s: 0,
+      real: SAMPLE.real,
+      reading_ts: SAMPLE.reading_ts,
+      error: '',
+      sample: true,
+      history: SAMPLE_HISTORY.slice()
+    };
+  }
+
+  function setMetric(metricId, valueId, subId, value, sub, missing) {
+    var card = $(metricId);
+    var valueEl = $(valueId);
+    var subEl = $(subId);
+    valueEl.textContent = value;
+    subEl.textContent = sub;
+    if (card) { card.classList.toggle('is-missing', !!missing); }
+  }
+
+  function metricSub(data, normal, missing) {
+    if (data.sample) { return 'sample · steady'; }
+    if (data.state !== 'live' && data.state !== 'stale') {
+      if (data.state === 'relay-offline') { return 'relay offline'; }
+      if (data.state === 'offline') { return 'reading is offline'; }
+      return 'waiting for the band';
+    }
+    if (missing) { return 'not in this reading'; }
+    if (data.state === 'live') { return normal; }
+    return ageLabel(data.age_s) + ' · last reading';
+  }
+
+  function renderMetrics(data) {
+    var real = data.real;
+    var showValues = !!real && (data.state === 'live' || data.state === 'stale' || data.state === 'sample');
+    var hr = showValues ? fmtHr(real.heart_rate_bpm) : '—';
+    var spo2 = showValues ? fmtSpo2(real.spo2_percent) : '—';
+    var stress = showValues ? fmtStress(real.stress_score) : '—';
+    var steps = showValues ? fmtSteps(real.steps) : '—';
+    var hrMissing = !showValues || numberOrNull(real.heart_rate_bpm) === null;
+    var spo2Missing = !showValues || numberOrNull(real.spo2_percent) === null;
+    var stressMissing = !showValues || numberOrNull(real.stress_score) === null;
+    var stepsMissing = !showValues || numberOrNull(real.steps) === null;
+
+    setMetric('metricHr', 'hr', 'hrSub', hr, metricSub(data, 'live · Health UI', hrMissing), hrMissing);
+    setMetric('metricSpo2', 'spo2', 'spo2Sub', spo2, metricSub(data, 'latest completed', spo2Missing), spo2Missing);
+    setMetric('metricStress', 'stress', 'stressSub', stress, metricSub(data, 'realtime', stressMissing), stressMissing);
+    setMetric('metricSteps', 'steps', 'stepsSub', steps, metricSub(data, 'today', stepsMissing), stepsMissing);
+  }
+
+  function renderLink(data) {
+    var badge = $('linkBadge');
+    var title = $('linkTitle');
+    var age = $('linkAge');
+    var fill = $('linkFill');
+    var source = $('linkSource');
+    var time = $('linkTime');
+    var real = data.real;
+    var ts = data.reading_ts;
+
+    badge.dataset.state = data.state;
+    bindState(badge, data.state);
+    if (data.sample) {
+      badge.textContent = 'Sample';
+      title.textContent = 'Visual preview';
+      age.textContent = 'No device data';
+      fill.style.width = '100%';
+      source.textContent = 'Sample data · not a reading';
+      time.textContent = '—';
+      return;
+    }
+    if (data.state === 'live') {
+      badge.textContent = 'Live';
+      title.textContent = real ? 'Reading received' : 'Waiting for the first reading';
+      age.textContent = ageLabel(data.age_s);
+      fill.style.width = '100%';
+      source.textContent = 'Huawei Health · USB relay';
+      time.textContent = ts ? 'Reading ' + fmtTime(ts) : '—';
+      return;
+    }
+    if (data.state === 'stale') {
+      badge.textContent = 'Stale';
+      title.textContent = 'Last reading is ' + ageLabel(data.age_s);
+      age.textContent = ageShort(data.age_s);
+      fill.style.width = '48%';
+      source.textContent = 'Huawei Health · USB relay';
+      time.textContent = ts ? 'Reading ' + fmtTime(ts) : '—';
+      return;
+    }
+    if (data.state === 'offline') {
+      badge.textContent = 'Offline';
+      title.textContent = 'No recent reading';
+      age.textContent = ageLabel(data.age_s);
+      fill.style.width = '0%';
+      source.textContent = 'Huawei Health · USB relay';
+      time.textContent = ts ? 'Reading ' + fmtTime(ts) : '—';
+      return;
+    }
+    if (data.state === 'relay-offline') {
+      badge.textContent = 'Relay offline';
+      title.textContent = 'Receiver unreachable';
+      age.textContent = '—';
+      fill.style.width = '0%';
+      source.textContent = 'Start the KinetiQ receiver on :8000';
+      time.textContent = '—';
+      return;
+    }
+    badge.textContent = 'Waiting';
+    title.textContent = 'Waiting for the first reading';
+    age.textContent = '—';
+    fill.style.width = '0%';
+    source.textContent = 'Huawei Health · USB relay';
+    time.textContent = '—';
+  }
+
+  function bindState(el, viewState) {
+    if (!el) { return; }
+    if (viewState === 'relay-offline') {
+      el.dataset.state = 'offline';
+    } else {
+      el.dataset.state = viewState;
+    }
+  }
+
+  function renderTrend(data) {
+    var line = $('sparkLine');
+    var area = $('sparkArea');
+    var dot = $('sparkDot');
+    var note = $('trendNote');
+    var range = $('trendRange');
+    var count = $('trendCount');
+    if (!line || !area || !dot || !note || !range || !count) { return; }
+    var values = (data.history || []).map(Number).filter(function (v) { return Number.isFinite(v); });
+    if (data.sample) { values = SAMPLE_HISTORY.slice(); }
+    var show = data.sample || data.state === 'live' || data.state === 'stale';
+    if (!show || !values.length) {
+      line.style.opacity = '0';
+      line.setAttribute('d', '');
+      area.setAttribute('d', '');
+      dot.setAttribute('opacity', '0');
+      note.textContent = data.sample ? 'Sample trend' : 'Building';
+      range.textContent = '—';
+      count.textContent = values.length
+        ? values.length + (values.length === 1 ? ' reading' : ' readings')
+        : 'No readings';
+      return;
+    }
+    var min = Math.min.apply(null, values);
+    var max = Math.max.apply(null, values);
+    if (values.length === 1) {
+      line.style.opacity = '.42';
+      line.setAttribute('d', 'M 0 28 L 300 28');
+      area.setAttribute('d', '');
+      dot.setAttribute('cx', '150');
+      dot.setAttribute('cy', '28');
+      dot.setAttribute('opacity', '1');
+      note.textContent = data.sample ? 'Sample trend' : 'Building trend';
+      range.textContent = Math.round(min) + ' bpm';
+      count.textContent = data.sample ? '1 sample' : '1 reading';
+      return;
+    }
+    line.style.opacity = '1';
+    var lo = min;
+    var hi = max;
+    if (hi - lo < 6) {
+      var mid = (hi + lo) / 2;
+      lo = mid - 3;
+      hi = mid + 3;
+    }
+    var points = values.map(function (value, index) {
+      var x = values.length === 1 ? 150 : (index / (values.length - 1)) * 300;
+      var y = 48 - ((value - lo) / (hi - lo)) * 40;
+      return [x, y];
+    });
+    var linePath = points.map(function (point, index) {
+      return (index ? 'L' : 'M') + point[0].toFixed(1) + ' ' + point[1].toFixed(1);
+    }).join(' ');
+    line.setAttribute('d', linePath);
+    if (points.length > 1) {
+      var areaPath = 'M ' + points[0][0].toFixed(1) + ' 54 L '
+        + points.map(function (point) {
+          return point[0].toFixed(1) + ' ' + point[1].toFixed(1);
+        }).join(' L ')
+        + ' L ' + points[points.length - 1][0].toFixed(1) + ' 54 Z';
+      area.setAttribute('d', areaPath);
+    } else {
+      area.setAttribute('d', '');
+    }
+    var last = points[points.length - 1];
+    dot.setAttribute('cx', last[0].toFixed(1));
+    dot.setAttribute('cy', last[1].toFixed(1));
+    dot.setAttribute('opacity', '1');
+    note.textContent = data.sample ? 'Sample trend' : 'Genuine · last ' + values.length;
+    range.textContent = min === max
+      ? Math.round(min) + ' bpm'
+      : Math.round(min) + '–' + Math.round(max) + ' bpm';
+    count.textContent = values.length + (data.sample ? ' samples' : (values.length === 1 ? ' reading' : ' readings'));
+  }
+
+  function renderDetails(data) {
+    var real = data.real;
+    var showValues = !!real && (data.state === 'live' || data.state === 'stale' || data.state === 'sample');
+    var hr = showValues ? fmtHr(real.heart_rate_bpm) : '—';
+    var spo2 = showValues ? fmtSpo2(real.spo2_percent) : '—';
+    var stress = showValues ? fmtStress(real.stress_score) : '—';
+    var steps = showValues ? fmtSteps(real.steps) : '—';
+    setDetail('dHr', hr === '—' ? '—' : hr + ' bpm', hr === '—');
+    setDetail('dSpo2', spo2 === '—' ? '—' : spo2 + '%', spo2 === '—');
+    setDetail('dStress', stress === '—' ? '—' : stress + ' / 100', stress === '—');
+    setDetail('dSteps', steps, steps === '—');
+    setDetail('dTime', data.reading_ts ? fmtDateTime(data.reading_ts) : '—', !data.reading_ts);
+    var ageText = ageLabel(data.age_s);
+    if (data.state === 'live') { ageText += ' · live'; }
+    if (data.state === 'stale') { ageText += ' · stale'; }
+    setDetail('dAge', ageText, ageText === '—');
+    setDetail('dSource', data.sample ? 'Sample data' : 'Huawei Health · Band 6', !showValues);
+    setDetail('dTransport', data.sample ? 'Visual preview' : 'Health UI → USB relay', !showValues);
+    setDetail('dDevice', data.sample ? 'Sample device' : (real && real.device_model ? real.device_model : 'Huawei Band 6 (via Health UI)'), !showValues);
+    var freshness = data.sample ? 'Sample preview' : (STATUS_LABELS[data.state] || '—');
+    setDetail('dFreshness', freshness, false);
+  }
+
+  function setDetail(id, text, missing) {
+    var el = $(id);
+    el.textContent = text;
+    el.classList.toggle('is-missing', !!missing);
+  }
+
+  function dismissStore() {
+    try {
+      var raw = localStorage.getItem(DISMISS_KEY);
+      var value = raw ? JSON.parse(raw) : {};
+      return value && typeof value === 'object' ? value : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function saveDismissStore(value) {
+    try {
+      var keys = Object.keys(value);
+      if (keys.length > 8) {
+        keys.slice(0, keys.length - 8).forEach(function (key) { delete value[key]; });
+      }
+      localStorage.setItem(DISMISS_KEY, JSON.stringify(value));
+    } catch (err) { /* storage may be unavailable */ }
+  }
+
+  function readingKey(data) {
+    if (data.sample) { return 'sample-v1'; }
+    if (!data.real) { return 'none'; }
+    return [
+      data.reading_ts || '',
+      data.real.heart_rate_bpm,
+      data.real.spo2_percent,
+      data.real.stress_score,
+      data.real.steps
+    ].join('|');
+  }
+
+  function guidanceCards(data) {
+    if (!data.real || data.state === 'offline' || data.state === 'waiting' || data.state === 'relay-offline') {
+      return null;
+    }
+    var real = data.real;
+    var hr = numberOrNull(real.heart_rate_bpm);
+    var spo2 = numberOrNull(real.spo2_percent);
+    var stress = numberOrNull(real.stress_score);
+    var steps = numberOrNull(real.steps);
+    var sample = !!data.sample;
+    var time = function (index) {
+      if (sample) { return ['09:42', '09:18', '09:05'][index] || '09:05'; }
+      return index === 0 ? ageShort(data.age_s) : 'Today';
+    };
+    var cards = [];
+
+    var parts = [];
+    if (hr !== null) { parts.push('Heart rate ' + Math.round(hr) + ' bpm'); }
+    if (spo2 !== null) { parts.push('SpO₂ ' + Math.round(spo2) + '%'); }
+    if (stress !== null) { parts.push('Stress ' + Math.round(stress) + '/100'); }
+    if (steps !== null) { parts.push(Math.round(steps).toLocaleString('en-US') + ' steps today'); }
+    cards.push({
+      id: 'snapshot',
+      time: time(0),
+      category: 'Snapshot',
+      title: 'A reading to notice',
+      body: parts.length ? parts.join(' · ') + '.' : 'The reading is live, but its values are incomplete.'
+    });
+
+    if (stress !== null) {
+      var stressTitle = stress >= 60 ? 'A breathing pause' : (stress >= 30 ? 'A steady moment' : 'A calm reading');
+      var stressBody = stress >= 60
+        ? 'Your stress score is ' + Math.round(stress) + '/100. A few slow breaths might be a gentle reset.'
+        : (stress >= 30
+          ? 'Your stress score is ' + Math.round(stress) + '/100 — a good moment for a short pause.'
+          : 'Your stress score is ' + Math.round(stress) + '/100. A nice moment to enjoy the calm.');
+      cards.push({
+        id: 'stress',
+        time: time(1),
+        category: 'Wellbeing',
+        title: stressTitle,
+        body: stressBody
+      });
+    }
+
+    if (steps !== null) {
+      cards.push({
+        id: 'movement',
+        time: time(2),
+        category: 'Movement',
+        title: steps < 5000 ? 'A little movement' : 'Good movement',
+        body: steps < 5000
+          ? 'You are at ' + Math.round(steps).toLocaleString('en-US') + ' steps today. A short walk could be a gentle way to add a few more.'
+          : 'You are at ' + Math.round(steps).toLocaleString('en-US') + ' steps today. Keep listening to your body.'
+      });
+    }
+
+    var fallbacks = [
+      {
+        id: 'source',
+        category: 'Source',
+        title: 'Genuine, not simulated',
+        body: 'Relayed from Huawei Health over USB. Missing values stay blank, never zero.'
+      },
+      {
+        id: 'privacy',
+        category: 'Privacy',
+        title: 'On-device by design',
+        body: 'Camera frames stay on this device. Only a motion signal is used locally.'
+      }
+    ];
+    fallbacks.forEach(function (card) {
+      if (cards.length >= 3) { return; }
+      if (cards.some(function (existing) { return existing.id === card.id; })) { return; }
+      cards.push({
+        id: card.id,
+        time: sample ? time(cards.length) : 'Today',
+        category: card.category,
+        title: card.title,
+        body: card.body
+      });
+    });
+    return cards.slice(0, 3);
+  }
+
+  function renderGuidance(data) {
+    var grid = $('guidanceGrid');
+    var empty = $('guidanceEmpty');
+    var emptyText = $('guidanceEmptyText');
+    var reset = $('guidanceReset');
+    var eyebrow = $('guidanceEyebrow');
+    var note = $('guidanceNote');
+    var cards = guidanceCards(data);
+    var key = readingKey(data);
+
+    if (!cards) {
+      grid.classList.add('is-hidden');
+      empty.classList.remove('is-hidden');
+      reset.classList.add('is-hidden');
+      eyebrow.textContent = 'Gentle guidance / Waiting';
+      note.textContent = 'No live reading yet · nothing is generated from stale or missing data';
+      if (data.state === 'relay-offline') {
+        emptyText.textContent = 'The relay is unreachable. Start the receiver on :8000 and keep the phone connected.';
+      } else if (data.state === 'offline') {
+        emptyText.textContent = 'The last reading is too old to guide from. Open Huawei Health for a fresh reading.';
+      } else {
+        emptyText.textContent = 'Waiting for a live reading. Open Huawei Health on the phone and keep the streamer service on.';
+      }
+      return;
+    }
+
+    var dismissed = dismissStore();
+    var hidden = Array.isArray(dismissed[key]) ? dismissed[key] : [];
+    var visible = cards.filter(function (card) { return hidden.indexOf(card.id) === -1; });
+    if (!visible.length) {
+      grid.classList.add('is-hidden');
+      empty.classList.remove('is-hidden');
+      emptyText.textContent = 'All caught up for this reading.';
+      reset.classList.remove('is-hidden');
+    } else {
+      empty.classList.add('is-hidden');
+      grid.classList.remove('is-hidden');
+      reset.classList.add('is-hidden');
+      grid.textContent = '';
+      visible.forEach(function (card) {
+        var el = document.createElement('article');
+        el.className = 'guidance-card';
+
+        var meta = document.createElement('div');
+        meta.className = 'guidance-meta';
+        var t = document.createElement('span');
+        t.className = 'guidance-time';
+        t.textContent = card.time;
+        var c = document.createElement('span');
+        c.className = 'guidance-category';
+        c.textContent = card.category;
+        meta.appendChild(t);
+        meta.appendChild(c);
+
+        var title = document.createElement('h3');
+        title.textContent = card.title;
+        var body = document.createElement('p');
+        body.className = 'guidance-body';
+        body.textContent = card.body;
+
+        var ack = document.createElement('button');
+        ack.className = 'link-btn';
+        ack.type = 'button';
+        ack.textContent = 'Acknowledge';
+        ack.addEventListener('click', function () {
+          el.classList.add('is-dismissing');
+          window.setTimeout(function () {
+            var store = dismissStore();
+            var list = Array.isArray(store[key]) ? store[key] : [];
+            if (list.indexOf(card.id) === -1) { list.push(card.id); }
+            store[key] = list;
+            saveDismissStore(store);
+            renderGuidance(data);
+          }, 190);
+        });
+
+        el.appendChild(meta);
+        el.appendChild(title);
+        el.appendChild(body);
+        el.appendChild(ack);
+        grid.appendChild(el);
+      });
+    }
+
+    if (data.sample) {
+      eyebrow.textContent = 'Sample guidance / Demo data';
+      note.textContent = 'Fictional examples · acknowledge to clear';
+    } else if (data.state === 'stale') {
+      eyebrow.textContent = 'Gentle guidance / Last reading';
+      note.textContent = 'From your last reading · not medical advice';
+    } else {
+      eyebrow.textContent = 'Gentle guidance / Live data';
+      note.textContent = 'Generated from your latest reading · not medical advice';
+    }
+  }
+
+  function renderFooter(data) {
+    var left = $('footerLeft');
+    var right = $('footerRight');
+    if (data.sample) {
+      left.textContent = 'Demo data only. This information is not a medical diagnosis or a substitute for professional care.';
+      right.textContent = 'Visual prototype · no camera or health sensors connected';
+    } else {
+      left.textContent = 'Not a medical device. Values are relayed from Huawei Health; no diagnosis or treatment.';
+      right.textContent = 'Camera processed on-device · no video stored';
+    }
+  }
+
+  function render(data) {
+    state.data = data;
+    document.body.dataset.state = data.state;
+    document.body.dataset.sample = data.sample ? 'true' : 'false';
+
+    var status = $('statusPill');
+    status.dataset.state = data.state;
+    $('statusText').textContent = STATUS_LABELS[data.state] || 'Connecting…';
+
+    var readingPill = $('readingPill');
+    readingPill.dataset.state = data.state;
+    if (data.sample) {
+      readingPill.textContent = 'Sample readings';
+    } else if (data.state === 'live') {
+      readingPill.textContent = 'Live readings';
+    } else if (data.state === 'stale') {
+      readingPill.textContent = 'Stale · ' + ageShort(data.age_s);
+    } else if (data.state === 'offline') {
+      readingPill.textContent = 'Offline';
+    } else if (data.state === 'relay-offline') {
+      readingPill.textContent = 'Relay offline';
+    } else {
+      readingPill.textContent = 'No reading';
+    }
+
+    renderMetrics(data);
+    renderLink(data);
+    renderTrend(data);
+    renderDetails(data);
+    renderGuidance(data);
+    renderFooter(data);
+
+    var foot = $('snapshotFoot');
+    if (data.sample) {
+      foot.textContent = 'Visual preview · sample values, not a reading.';
+    } else if (data.state === 'live') {
+      foot.textContent = 'Genuine Band 6 readings · activity and motion not relayed.';
+    } else if (data.state === 'stale') {
+      foot.textContent = 'Last genuine reading · activity and motion not relayed.';
+    } else if (data.state === 'relay-offline') {
+      foot.textContent = 'Receiver unreachable · no readings are being invented.';
+    } else {
+      foot.textContent = 'No live reading yet.';
+    }
+  }
+
+  function applySampleMode() {
+    document.title = 'KinetiQ · Home Edition (sample preview)';
+    $('askOpen').disabled = true;
+    $('askOpen').title = 'The assistant is off in sample preview';
+    $('previewToggle').disabled = true;
+    $('previewToggle').textContent = 'Visual preview';
+    $('previewBadge').dataset.state = 'sample';
+    $('previewBadgeText').textContent = 'Sample preview';
+    $('previewNote').textContent = 'Visual only';
+    $('greeting').textContent = 'Good to see you.';
+    $('greetingNote').textContent = 'A quiet moment, just for you.';
+    $('previewPlaceholder').querySelector('.placeholder-title').textContent = 'A calmer way to check in.';
+    $('previewPlaceholder').querySelector('.placeholder-copy').textContent = 'This is a visual preview of the home edition. Open the live view for genuine Band 6 readings.';
+    render(normalizeSample());
+  }
+
+  function applyLiveMode() {
+    document.title = 'KinetiQ · Home Edition';
+    $('askOpen').disabled = false;
+    $('previewToggle').disabled = false;
+    $('previewToggle').textContent = 'Enable preview';
+  }
+
+  function poll() {
+    if (state.sample || state.pollBusy) { return; }
+    state.pollBusy = true;
+    var controller = new AbortController();
+    var timer = window.setTimeout(function () { controller.abort(); }, 2800);
+    fetch('/band/api', { cache: 'no-store', signal: controller.signal })
+      .then(function (response) {
+        if (!response.ok) { throw new Error('HTTP ' + response.status); }
+        return response.json();
+      })
+      .then(function (snapshot) {
+        state.failures = 0;
+        render(normalize(snapshot));
+      })
+      .catch(function (err) {
+        state.failures += 1;
+        if (state.failures >= 2 || !state.data) {
+          render(normalize(null, err && err.name === 'AbortError' ? 'Relay timed out' : String(err && err.message || err)));
+        }
+      })
+      .finally(function () {
+        window.clearTimeout(timer);
+        state.pollBusy = false;
+      });
+  }
+
+  function setTab(which) {
+    var calm = which === 'calm';
+    $('tabCalm').classList.toggle('is-active', calm);
+    $('tabDetail').classList.toggle('is-active', !calm);
+    $('tabCalm').setAttribute('aria-selected', calm ? 'true' : 'false');
+    $('tabDetail').setAttribute('aria-selected', calm ? 'false' : 'true');
+    $('calmView').classList.toggle('is-hidden', !calm);
+    $('detailView').classList.toggle('is-hidden', calm);
+  }
+
+  function showToast(message) {
+    var toast = $('toast');
+    toast.textContent = message;
+    toast.classList.remove('is-hidden');
+    toast.classList.add('is-visible');
+    if (state.toastTimer) { window.clearTimeout(state.toastTimer); }
+    state.toastTimer = window.setTimeout(function () {
+      toast.classList.remove('is-visible');
+      toast.classList.add('is-hidden');
+    }, 3400);
+  }
+
+  function stopCamera() {
+    if (state.camTimer) { window.clearInterval(state.camTimer); state.camTimer = null; }
+    if (state.postTimer) { window.clearInterval(state.postTimer); state.postTimer = null; }
+    if (state.camStream) {
+      state.camStream.getTracks().forEach(function (track) { track.stop(); });
+      state.camStream = null;
+    }
+    state.camPrev = null;
+    state.camEma = 0;
+    var video = $('camera');
+    video.srcObject = null;
+    $('previewStage').classList.remove('is-live');
+    $('previewBadge').dataset.state = 'offline';
+    $('previewBadgeText').textContent = 'Preview off';
+    $('previewNote').textContent = 'Camera · on-device';
+    $('previewToggle').textContent = 'Enable preview';
+    $('greeting').textContent = 'A quiet moment.';
+    $('greetingNote').textContent = 'Enable the preview when you are ready.';
+  }
+
+  function startCamera() {
+    if (state.sample) { return; }
+    if (state.camStream) { stopCamera(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('Camera is not available in this browser.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false
+    }).then(function (stream) {
+      state.camStream = stream;
+      var video = $('camera');
+      video.srcObject = stream;
+      video.play().catch(function () {});
+      $('previewStage').classList.add('is-live');
+      $('previewBadge').dataset.state = 'live';
+      $('previewBadgeText').textContent = 'Preview active';
+      $('previewNote').textContent = 'Camera · on-device';
+      $('previewToggle').textContent = 'Hide preview';
+      $('greeting').textContent = 'Good to see you.';
+      $('greetingNote').textContent = 'Frames stay on this device.';
+      state.camPrev = null;
+      state.camEma = 0;
+      state.camTimer = window.setInterval(sampleCamera, 250);
+      state.postTimer = window.setInterval(postMotion, 1000);
+    }).catch(function () {
+      showToast('Camera permission was not granted. The snapshot still works.');
+    });
+  }
+
+  function sampleCamera() {
+    var video = $('camera');
+    if (!video.videoWidth) { return; }
+    var canvas = $('motionCanvas');
+    var context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(video, 0, 0, 64, 48);
+    var pixels = context.getImageData(0, 0, 64, 48).data;
+    var gray = [];
+    for (var i = 0; i < pixels.length; i += 4) {
+      gray.push((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3);
+    }
+    if (state.camPrev) {
+      var total = 0;
+      for (var j = 0; j < gray.length; j++) {
+        total += Math.abs(gray[j] - state.camPrev[j]);
+      }
+      var raw = (total / gray.length) / 255;
+      state.camEma = state.camEma + 0.25 * (raw - state.camEma);
+    }
+    state.camPrev = gray;
+  }
+
+  function postMotion() {
+    fetch('/api/camera_ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motion: state.camEma, activity: 'auto' })
+    }).catch(function () {});
+  }
+
+  function openAsk() {
+    if (state.sample) {
+      showToast('The assistant is off in sample preview.');
+      return;
+    }
+    $('askModal').classList.remove('is-hidden');
+    window.setTimeout(function () { $('askInput').focus(); }, 30);
+  }
+
+  function closeAsk() {
+    $('askModal').classList.add('is-hidden');
+  }
+
+  function askMessage(role, text, grounding) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ask-message ' + (role === 'you' ? 'ask-you' : 'ask-mirror');
+    var p = document.createElement('p');
+    p.textContent = text;
+    wrap.appendChild(p);
+    if (grounding) {
+      var badge = document.createElement('span');
+      badge.className = 'grounding ' + (grounding === 'PASS' ? 'pass' : 'fail');
+      badge.textContent = grounding === 'PASS' ? 'Grounded' : 'Ungrounded';
+      wrap.appendChild(badge);
+    }
+    $('askMessages').appendChild(wrap);
+    $('askMessages').scrollTop = $('askMessages').scrollHeight;
+    return wrap;
+  }
+
+  function askSubmit(event) {
+    event.preventDefault();
+    if (state.askBusy) { return; }
+    var input = $('askInput');
+    var question = input.value.trim();
+    if (!question) { return; }
+    input.value = '';
+    askMessage('you', question);
+    var pending = askMessage('mirror', 'Thinking…');
+    pending.classList.add('ask-pending');
+    state.askBusy = true;
+    $('askSend').disabled = true;
+    var controller = new AbortController();
+    var timer = window.setTimeout(function () { controller.abort(); }, 32000);
+    fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: question, tts: false }),
+      signal: controller.signal
+    }).then(function (response) {
+      return response.json().then(function (body) {
+        if (!response.ok) { throw new Error(body && body.error ? body.error : 'HTTP ' + response.status); }
+        return body;
+      });
+    }).then(function (body) {
+      pending.remove();
+      askMessage('mirror', body.answer || 'No answer was returned.', body.grounding);
+    }).catch(function (err) {
+      pending.remove();
+      var message = err && err.name === 'AbortError'
+        ? 'The assistant timed out. The snapshot still works offline.'
+        : 'The assistant is unavailable right now. The snapshot still works offline.';
+      askMessage('mirror', message, 'FAIL');
+    }).finally(function () {
+      window.clearTimeout(timer);
+      state.askBusy = false;
+      $('askSend').disabled = false;
+      $('askInput').focus();
+    });
+  }
+
+  function initialize() {
+    renderClock();
+    window.setInterval(renderClock, 1000);
+
+    $('tabCalm').addEventListener('click', function () { setTab('calm'); });
+    $('tabDetail').addEventListener('click', function () { setTab('detail'); });
+    $('tabCalm').addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowRight') { event.preventDefault(); $('tabDetail').focus(); setTab('detail'); }
+    });
+    $('tabDetail').addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); $('tabCalm').focus(); setTab('calm'); }
+    });
+    $('previewToggle').addEventListener('click', startCamera);
+    $('askOpen').addEventListener('click', openAsk);
+    $('askClose').addEventListener('click', closeAsk);
+    $('askModal').addEventListener('click', function (event) {
+      if (event.target && event.target.dataset && event.target.dataset.close === 'ask') { closeAsk(); }
+    });
+    $('askForm').addEventListener('submit', askSubmit);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !$('askModal').classList.contains('is-hidden')) { closeAsk(); }
+    });
+    $('guidanceReset').addEventListener('click', function () {
+      var data = state.data;
+      if (!data) { return; }
+      var key = readingKey(data);
+      var store = dismissStore();
+      delete store[key];
+      saveDismissStore(store);
+      renderGuidance(data);
+    });
+    window.addEventListener('pagehide', stopCamera);
+
+    if (SAMPLE_MODE) {
+      applySampleMode();
+    } else {
+      applyLiveMode();
+      poll();
+      window.setInterval(poll, POLL_MS);
+    }
+    if (params.get('tab') === 'detail') { setTab('detail'); }
+  }
+
+  initialize();
+}());
+</script>
+</body>
+</html>

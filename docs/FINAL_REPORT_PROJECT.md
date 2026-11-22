@@ -60,7 +60,7 @@ ecosystem.
 
 | Component | Path | State |
 |---|---|---|
-| Laptop receiver | `backend/kinetiq_receiver.py` | Token-auth POST ingest, CSV persistence, SSE stream, schema-v1 validation (BLE-coded values that cannot be decoded are rejected with 422). **19/19 unittests** (`python -m unittest discover -s backend`) |
+| Laptop receiver | `backend/kinetiq_receiver.py` | Token-auth POST ingest, CSV persistence, SSE stream, schema-v1 validation (BLE-coded values that cannot be decoded are rejected with 422). **22/22 unittests** (`python -m unittest discover -s backend`) |
 | Dashboard | `web/index.html` | Stress row added; SSE + polling fallback; SIMULATED values visually distinguishable |
 | Mock lane | receiver ingest + demo senders | Clearly labelled SIMULATED; zero coupling to genuine values |
 | BLE diagnostic app | `ble-diagnostic/` → `app\build\outputs\apk\debug\app-debug.apk` | v0.3.1-diagnostic: scan (neverForLocation), bonded connect on tap, GATT dump, standard reads, passive FE02 capture with CRC-verified frame log, plaintext probes. Diagnostics log on device at `Android/data/com.kinetiq.blediag/files/kinetiq_ble_diag.log` |
@@ -412,21 +412,47 @@ adb shell "pm dump com.huawei.health | grep -icE 'permission.health'"
   and hygiene (ON state restored, verified).
 - Every UI-level action on the phone (taps) was user-driven.
 
-## Appendix D — Partner mirror integration (22 Oct 2026)
+## Appendix D — Partner mirror integration (22 Oct; updated 23 Oct 2026)
 - Cloned `siddoit/KinetiQ`; its laptop mirror is a stdlib HTTP dashboard fed by
   a locked eight-field telemetry schema (`laptop/receiver/telemetry_schema.py`).
-- Added `kinetiq-integration/` in this repository: a bridge that polls our
-  receiver and validates every packet against the upstream schema's own
-  `TelemetryRecord.parse` before emitting it through their documented
-  `--stdin` mode. The upstream clone remains byte-identical
+  The upstream clone remains byte-identical
   (`git -C external/KinetiQ status --porcelain` is empty).
-- Genuine fields: heart rate, SpO2 and steps. Not relayed by this path:
-  activity (`unknown`) and motion (`0.0`); exertion uses the upstream
-  `derive_exertion` heuristic. Stress has no schema slot and is shown in an
-  additive runtime chip (with relay freshness) rather than being dropped.
+- On 23 Oct the partner advanced to `79815da` (in-app Band/RTOS lane switch,
+  direct Band collector, conversational AI, presence greeting, report suite).
+  The schema is still the same eight fields; the only parser change is BOM/
+  leading-prefix tolerance. Analysis and defect list:
+  [`docs/UPSTREAM_79815DA_ANALYSIS.md`](UPSTREAM_79815DA_ANALYSIS.md).
+- Their new direct Band collector was not adopted: it re-stamps stale
+  readings with `timestamp=now`, turns missing steps into `0`, fabricates
+  `activity=rest` when no camera is present, drops stress, and duplicates
+  packets when their `demo_band_lane.ps1` also runs the stdin bridge.
+- Our integration is now a runtime wrapper (`kinetiq-integration/mirror_band.py`):
+  imports their `app.py` without running their `main()`, serves the new Home
+  Edition at `/`, keeps their original UI at `/classic` with an additive chip,
+  and exposes a read-only `/band/api`. There is no `--stdin` pipe and no bridge
+  process in the normal path.
+- The wrapper's collector stores a packet only when the receiver reports
+  `live`, `simulated=false`, and heart rate, SpO2 and steps are all present;
+  it uses the genuine reading timestamp and de-duplicates by reading identity.
+  Genuine fields: heart rate, SpO2, stress and steps. Activity (`unknown`) and
+  motion (`0.0`) are documented schema placeholders; exertion uses the upstream
+  `derive_exertion` heuristic. Stress has no schema slot and is shown in the
+  Home Edition and the classic chip, never inside their packet.
+- The Home Edition deliberately omits respiratory rate, skin temperature and
+  readiness; the Detailed readings tab marks them **not measured**, and PPG as
+  **not relayed**. `?preview=1` is a conspicuously labelled visual-preview mode
+  using sample values, never presented as live. Camera preview is off by
+  default and processed locally.
 - Our relay gained `steps` additively (streamer parser 0-200,000, optional
   receiver field, CSV column); older relays still validate and absent steps
   remain `null`, never `0`.
-- Verified end-to-end: Health home screen -> receiver (`live`) -> mirror
-  `/api/telemetry` (HR 60, SpO2 100, steps 4,181, stress 57 in the chip).
-  Tests: receiver 22/22, integration 15/15, parser 19/19.
+- Verified end-to-end on 22 Oct: Health home screen -> receiver (`live`) ->
+  mirror (HR 60, SpO2 100, steps 4,181, stress 57 in the Home Edition/chip).
+  On 23 Oct the phone was disconnected; final runtime/UI checks used a local
+  receiver fixture and are not presented as hardware evidence. Lane switching
+  (`POST /api/mode`) was exercised in both directions.
+  Tests: receiver 22/22, integration 25/25, parser 19/19.
+- The old `run_stack.py` supervisor was removed. `band_bridge.py` remains only
+  for compatibility with the partner's own `demo_band_lane.ps1`; it is not used
+  by `start_integration.bat` or the Home Edition. The upstream
+  `Tharun work/Huawei-kinetiq-band6` submodule is uninitialized and unused.

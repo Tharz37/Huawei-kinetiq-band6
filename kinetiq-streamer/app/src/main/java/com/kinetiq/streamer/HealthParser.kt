@@ -40,6 +40,15 @@ object HealthParser {
             get() = heartRateBpm != null || spo2Percent != null ||
                 stressScore != null || steps != null
 
+        /**
+         * The Health-UI receiver contract requires at least one of HR, SpO2 or
+         * stress. Steps on their own are a valid screen reading but the
+         * receiver deliberately refuses to let a vitals-free packet replace a
+         * genuine reading, so callers must not POST steps-only updates.
+         */
+        val hasVitals: Boolean
+            get() = heartRateBpm != null || spo2Percent != null || stressScore != null
+
         /** Log/prefs form, e.g. `hr=72 spo2=98.0 stress=null steps=4181`. */
         fun summary(): String =
             "hr=${heartRateBpm ?: "null"} spo2=${spo2Percent ?: "null"} " +
@@ -68,8 +77,9 @@ object HealthParser {
     // Last-resort SpO2: a standalone percentage.
     private val PERCENT_REGEX = Regex("""\b(\d{2,3})(?!\d)\s*%""")
     // Standalone stress number; word boundaries avoid chopping digits out of
-    // years or node ids.
-    private val STRESS_VALUE_REGEX = Regex("""\b(\d{1,3})(?!\d)\b""")
+    // years or node ids. A grouped step count ("4,181") must never become a
+    // stress score of 4 just because both values share a notification line.
+    private val STRESS_VALUE_REGEX = Regex("""(?<!\d)(\d{1,3})(?!\d|,\d{3})""")
     // A value inside one node ("4,181 steps"), as some Health layouts render it.
     private val STEPS_INLINE_REGEX =
         Regex("""\b(\d{1,3}(?:,\d{3})*|\d+)\s*steps?\b""", RegexOption.IGNORE_CASE)
@@ -109,9 +119,23 @@ object HealthParser {
             lower.contains("oxygen") || lower.contains("spo")
         }
         if (labelIndex >= 0) {
+            val labelText = texts[labelIndex]
+            val lower = labelText.lowercase(Locale.US)
+            val label = if (lower.contains("oxygen")) "oxygen" else "spo"
+            val labelEnd = lower.indexOf(label).let {
+                if (it >= 0) it + label.length else 0
+            }
+            // Only search *after* the label inside the same node. A Huawei
+            // Health notification can put several metrics in one string
+            // ("Heart rate 72 bpm · SpO2 98%"), and searching from the start
+            // would mistake the heart rate for the oxygen value.
+            val candidates = ArrayList<String>(LABEL_WINDOW + 1)
+            candidates.add(labelText.substring(labelEnd))
             val last = minOf(texts.size - 1, labelIndex + LABEL_WINDOW)
-            for (index in labelIndex..last) {
-                for (match in SPO2_VALUE_REGEX.findAll(texts[index])) {
+            for (index in (labelIndex + 1)..last) candidates.add(texts[index])
+
+            for (candidate in candidates) {
+                for (match in SPO2_VALUE_REGEX.findAll(candidate)) {
                     val value = match.groupValues[1].toIntOrNull() ?: continue
                     if (value in SPO2_MIN..SPO2_MAX) return value.toFloat()
                 }
@@ -130,9 +154,22 @@ object HealthParser {
     private fun findStress(texts: List<String>): Int? {
         val labelIndex = texts.indexOfFirst { it.lowercase(Locale.US).contains("stress") }
         if (labelIndex < 0) return null
+
+        val labelText = texts[labelIndex]
+        val lower = labelText.lowercase(Locale.US)
+        val label = "stress"
+        val labelEnd = lower.indexOf(label).let {
+            if (it >= 0) it + label.length else 0
+        }
+        // As with SpO2, never read a number that appears before the label in a
+        // combined notification line.
+        val candidates = ArrayList<String>(LABEL_WINDOW + 1)
+        candidates.add(labelText.substring(labelEnd))
         val last = minOf(texts.size - 1, labelIndex + LABEL_WINDOW)
-        for (index in labelIndex..last) {
-            for (match in STRESS_VALUE_REGEX.findAll(texts[index])) {
+        for (index in (labelIndex + 1)..last) candidates.add(texts[index])
+
+        for (candidate in candidates) {
+            for (match in STRESS_VALUE_REGEX.findAll(candidate)) {
                 val value = match.groupValues[1].toIntOrNull() ?: continue
                 if (value in STRESS_MIN..STRESS_MAX) return value
             }

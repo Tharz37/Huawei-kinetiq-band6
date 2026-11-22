@@ -41,5 +41,18 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_config" />
         </service>
+
+        <!-- Second extraction track: Huawei Health's ongoing status-bar
+             notification. The platform permission restricts binding to the
+             system; the user must still grant notification access explicitly. -->
+        <service
+            android:name=".HealthNotificationService"
+            android:exported="false"
+            android:label="@string/notification_service_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

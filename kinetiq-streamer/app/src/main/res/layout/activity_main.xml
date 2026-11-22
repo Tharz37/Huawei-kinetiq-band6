@@ -124,6 +124,22 @@
                 android:text="@string/open_health" />
         </LinearLayout>
 
+        <!-- Background notification listener -->
+        <TextView style="@style/SectionLabel" android:text="@string/section_notification" />
+
+        <TextView
+            android:id="@+id/notificationStatus"
+            style="@style/BodyText"
+            android:text="@string/status_unknown"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/openNotificationButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/open_notification" />
+
         <!-- Streaming -->
         <TextView style="@style/SectionLabel" android:text="@string/section_streaming" />
 

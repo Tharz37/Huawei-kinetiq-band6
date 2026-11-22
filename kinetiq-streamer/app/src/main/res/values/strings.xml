@@ -5,6 +5,7 @@
 
     <string name="accessibility_service_label">KinetiQ Streamer</string>
     <string name="accessibility_service_description">Reads the heart rate, blood oxygen and stress values that Huawei Health shows on its home screen and forwards only those visible readings to the local KinetiQ receiver. Nothing is simulated or typed: if a value is not on screen it is sent as empty.</string>
+    <string name="notification_service_label">KinetiQ Health Notification Reader</string>
 
     <string name="section_receiver">Receiver</string>
     <string name="label_endpoint">Endpoint URL (POST target)</string>
@@ -19,6 +20,11 @@
     <string name="open_accessibility">Open accessibility settings</string>
     <string name="open_health">Open Huawei Health</string>
 
+    <string name="section_notification">Background notification listener</string>
+    <string name="open_notification">Open notification access settings</string>
+    <string name="notification_enabled">ENABLED - can read Health notifications in the background</string>
+    <string name="notification_disabled">DISABLED - allow notification access</string>
+
     <string name="section_streaming">Streaming</string>
     <string name="start_streaming">Start streaming</string>
     <string name="stop_streaming">Stop streaming</string>
@@ -27,5 +33,5 @@
     <string name="no_reading">No reading posted yet.</string>
     <string name="dash">—</string>
 
-    <string name="demo_hint">Demo: 1) run the receiver on the laptop, 2) connect USB and run "adb reverse tcp:8000 tcp:8000" (or set the laptop LAN URL), 3) enable the accessibility service, 4) Start streaming, 5) open Huawei Health and leave its home screen visible. Values are read from the screen only; missing values are sent as null, never 0.</string>
+    <string name="demo_hint">Demo: 1) run the receiver on the laptop, 2) connect USB and run "adb reverse tcp:8000 tcp:8000" (or set the laptop LAN URL), 3) enable the accessibility service and notification access, 4) Start streaming, 5) open Huawei Health and leave its home screen visible. The screen watchdog refreshes every 4 s; Health notifications cover background updates. Values are read only from Health; missing values are sent as null, never 0.</string>
 </resources>

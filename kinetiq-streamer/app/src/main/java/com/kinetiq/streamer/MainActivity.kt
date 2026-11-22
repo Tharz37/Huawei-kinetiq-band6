@@ -1,5 +1,6 @@
 package com.kinetiq.streamer
 
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
@@ -36,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accessibilityStatus: TextView
     private lateinit var openAccessibilityButton: Button
     private lateinit var openHealthButton: Button
+    private lateinit var notificationStatus: TextView
+    private lateinit var openNotificationButton: Button
     private lateinit var streamingStatus: TextView
     private lateinit var serviceToggle: Button
     private lateinit var lastValues: TextView
@@ -63,6 +66,8 @@ class MainActivity : AppCompatActivity() {
         accessibilityStatus = findViewById(R.id.accessibilityStatus)
         openAccessibilityButton = findViewById(R.id.openAccessibilityButton)
         openHealthButton = findViewById(R.id.openHealthButton)
+        notificationStatus = findViewById(R.id.notificationStatus)
+        openNotificationButton = findViewById(R.id.openNotificationButton)
         streamingStatus = findViewById(R.id.streamingStatus)
         serviceToggle = findViewById(R.id.serviceToggle)
         lastValues = findViewById(R.id.lastValues)
@@ -77,6 +82,9 @@ class MainActivity : AppCompatActivity() {
         testButton.setOnClickListener { runConnectionTest(endpointInput.text.toString()) }
         openAccessibilityButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        openNotificationButton.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
         openHealthButton.setOnClickListener { openHuaweiHealth() }
         serviceToggle.setOnClickListener { toggleStreaming() }
@@ -128,10 +136,16 @@ class MainActivity : AppCompatActivity() {
                     "Streaming is ON, but the accessibility service is still disabled.",
                     Toast.LENGTH_LONG
                 ).show()
+            } else if (!isNotificationListenerEnabled()) {
+                Toast.makeText(
+                    this,
+                    "Streaming ON. Notification access is off, so only the visible Health screen is read.",
+                    Toast.LENGTH_LONG
+                ).show()
             } else {
                 Toast.makeText(
                     this,
-                    "Streaming ON - open Huawei Health and keep its home screen visible.",
+                    "Streaming ON - screen watchdog every 4 s, plus Health notifications.",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -153,8 +167,20 @@ class MainActivity : AppCompatActivity() {
             if (serviceOn) Color.rgb(21, 128, 61) else Color.rgb(185, 28, 28)
         )
 
+        val notificationOn = isNotificationListenerEnabled()
+        notificationStatus.text = getString(
+            if (notificationOn) R.string.notification_enabled else R.string.notification_disabled
+        )
+        notificationStatus.setTextColor(
+            if (notificationOn) Color.rgb(21, 128, 61) else Color.rgb(185, 28, 28)
+        )
+
         streamingStatus.text = if (prefs.enabled) {
-            "ON - reading only from the Huawei Health screen"
+            if (notificationOn) {
+                "ON - 4 s screen watchdog + Health notifications"
+            } else {
+                "ON - 4 s screen watchdog (notification access off)"
+            }
         } else {
             "OFF"
         }
@@ -186,6 +212,12 @@ class MainActivity : AppCompatActivity() {
         return enabled.split(':')
             .mapNotNull { ComponentName.unflattenFromString(it) }
             .any { it == expected }
+    }
+
+    private fun isNotificationListenerEnabled(): Boolean {
+        val manager = getSystemService(NotificationManager::class.java) ?: return false
+        val component = ComponentName(this, HealthNotificationService::class.java)
+        return manager.isNotificationListenerAccessGranted(component)
     }
 
     // ------------------------------------------------------------------ actions

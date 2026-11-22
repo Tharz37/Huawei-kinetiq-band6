@@ -141,6 +141,40 @@ class HealthParserTest {
     }
 
     @Test
+    fun combinedNotificationTextDoesNotBleedMetrics() {
+        // Huawei Health notifications can put several metrics in one line.
+        // The oxygen/stress values must come after their labels, not from the
+        // earlier heart-rate number.
+        val reading = HealthParser.parse(
+            listOf(
+                "Huawei Health",
+                "Heart rate 72 bpm, SpO2 98%, Stress 34, 4,181 steps"
+            )
+        )
+        assertEquals(72, reading.heartRateBpm)
+        assertEquals(98f, reading.spo2Percent)
+        assertEquals(34, reading.stressScore)
+        assertEquals(4181, reading.steps)
+        assertTrue(reading.hasVitals)
+    }
+
+    @Test
+    fun stressDoesNotBorrowAGroupedStepNumber() {
+        // "4,181 steps" must not yield a stress score of 4 when the actual
+        // stress value is absent.
+        val reading = HealthParser.parse(listOf("Stress", "4,181 steps"))
+        assertNull(reading.stressScore)
+        assertEquals(4181, reading.steps)
+    }
+
+    @Test
+    fun stepsOnlyNotificationIsNotAPostableVitalReading() {
+        val reading = HealthParser.parse(listOf("4,181 steps"))
+        assertTrue(reading.hasAny)
+        assertFalse(reading.hasVitals)
+    }
+
+    @Test
     fun ignoresStressLabelWithoutNumber() {
         assertNull(HealthParser.parse(listOf("Stress", "Your stress level is low")).stressScore)
     }

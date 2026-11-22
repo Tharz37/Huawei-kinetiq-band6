@@ -1,13 +1,13 @@
-# Huawei Band 6 → upstream KINETIQ mirror (additive integration)
+# Huawei Band 6 → partner KINETIQ mirror (runtime integration)
 
 This folder connects our genuine Huawei Band 6 relay to the partner KINETIQ
 mirror dashboard (`siddoit/KinetiQ`, cloned to `external/KinetiQ`).
 
-**Their repository is not modified.** The integration uses the mirror's own
-documented `--stdin` ingestion mode, then adds two runtime-only pieces: a
-read-only `/band/api` route and a small provenance chip pinned to the page.
-Their `git status` stays empty; nothing in their pipeline, schema, routes or
-copy is replaced.
+**Their repository is not modified.** `mirror_band.py` imports their
+`laptop/web/app.py` at runtime, serves a new Home Edition UI at `/`, and keeps
+their original UI available at `/classic` with a small provenance chip. Their
+`git status` stays empty; nothing in their pipeline, schema, routes or copy is
+replaced.
 
 ```
 Huawei Band 6 ──BLE── Huawei Health (untouched, home screen)
@@ -16,13 +16,22 @@ Huawei Band 6 ──BLE── Huawei Health (untouched, home screen)
               kinetiq_receiver.py  :8000  (our schema v1 + steps, token POST)
                              │  GET /api/wearable/latest
                              ▼
-              band_bridge.py  (genuine slot only, "live" only)
-                             │  upstream locked telemetry schema, one line/reading
-                             ▼
-              laptop/web/app.py --stdin   ← THEIR code, unmodified
-                             │
-              http://127.0.0.1:8777  +  /band/api + provenance chip (ours)
+              mirror_band.py  (runtime wrapper, ours)
+                 │  genuine slot only; stores a packet only when live
+                 │  and the reading timestamp is new
+                 ▼
+       THEIR laptop/web/app.py, imported in-process
+          ├── /          Home Edition UI (ours; home/index.html)
+          ├── /classic   their original UI + provenance chip
+          ├── /band/api  read-only JSON for the Home Edition
+          └── /api/*     their existing API, unchanged
 ```
+
+There is **no `--stdin` pipe and no bridge process** in the normal path. The
+wrapper uses their own `TelemetryRecord` validation and `map_snapshot` helpers,
+then writes a genuine packet into their in-process store. Their direct Band
+collector is not started, because it republishes stale readings with a new
+timestamp and turns missing steps into `0`.
 
 ## Quick start
 
@@ -35,25 +44,52 @@ Huawei Band 6 ──BLE── Huawei Health (untouched, home screen)
 2. Run `start_integration.bat` from the repository root.
    It reuses or starts the receiver, sets up `adb reverse tcp:8000 tcp:8000`
    (and offers the same screen-awake toggle as `start_demo.bat`), starts the
-   bridge → mirror stack, and opens the mirror at
+   wrapper directly, and opens the Home Edition at
    <http://127.0.0.1:8777/>.
 
 3. On the phone: open **Huawei Health**, stay on the home screen, and make sure
    the **KinetiQ Streamer** accessibility service is on.
 
-Manual equivalent (cmd, not PowerShell):
+Manual equivalent (cmd, not PowerShell), after the receiver is running:
 
 ```bat
-python kinetiq-integration\band_bridge.py | python kinetiq-integration\mirror_band.py
+python kinetiq-integration\mirror_band.py --strict-port
 ```
 
-or one supervised window with clean logs:
+`--strict-port` refuses to silently reuse a different server on 8777. Without
+it the wrapper falls back to 8778 (or the next free port) and prints the URL.
 
-```bat
-python kinetiq-integration\run_stack.py
-```
+The partner's original UI is always at <http://127.0.0.1:8777/classic>.
+The Home Edition has a clearly labelled visual-preview mode at
+<http://127.0.0.1:8777/?preview=1>; it uses sample values, says so in the
+header, panel and footer, and never presents them as a Band reading.
 
-## What the mirror receives
+## What the Home Edition shows
+
+| Tile | Source | Notes |
+|---|---|---|
+| Heart rate | `heart_rate_bpm` | genuine; Health UI realtime value when available |
+| SpO₂ | `spo2_percent` | genuine; Health's latest completed value |
+| Stress | `stress_score` | genuine; display-only here and in the classic chip |
+| Steps | `steps` | genuine; Health home-screen step count |
+
+The Home Edition shows only the values the relay actually has. It does not
+invent activity, motion, PPG quality, respiratory rate, skin temperature or a
+readiness score. The Detailed readings tab marks the last three as
+**not measured** and PPG as **not relayed**.
+
+- `live` readings are shown with green status and normal labels.
+- `stale` readings keep their real values but are labelled amber.
+- `offline`/unreachable blanks the values; it never substitutes `0`.
+- Missing individual values render as `—`.
+- Stress is shown outside the upstream packet; it is never inserted into their
+  locked eight-field schema or their AI payload.
+- Guidance cards are deterministic from genuine readings, not dependent on the
+  AI. The optional **Ask** modal calls their existing `/api/ask` endpoint.
+- Camera preview is off by default. When enabled, frames stay in the browser
+  and only motion is posted to their `/api/camera_ingest`; no video is stored.
+
+## What the classic upstream mirror receives
 
 The upstream schema is locked v1.0: exactly eight keys, no nulls, no unknown
 keys. Every value below is either genuine, **their own** derivation, or a
@@ -70,14 +106,14 @@ documented schema-legal placeholder.
 | `motion_intensity` | `0.0` | not relayed by this path |
 | `ppg_quality` | `"good"` | proxy: Health reported a completed SpO₂ measurement |
 
-No packet is emitted unless heart rate, SpO₂ and steps are all present and the
+No packet is stored unless heart rate, SpO₂ and steps are all present and the
 receiver reports the reading as `live`. Missing values are never replaced by
-zero and the mock lane is never read. If the reading goes `stale`/`offline` the
-bridge stops emitting and says why on stderr; the mirror keeps its last paint,
-and the chip ages out honestly.
+zero and the mock lane is never read. Stale or offline readings do not create a
+new packet with a fake `timestamp=now`; the Home Edition reads their real
+freshness directly from the receiver, and the classic chip ages out honestly.
 
 The schema has no stress field, and the upstream footer hardcodes a
-"simulated" note even in stdin mode. The injected chip therefore shows:
+"simulated" note even in this mode. The injected chip therefore shows:
 
 * the genuine source (`HUAWEI BAND 6 · genuine, not simulated`),
 * `HR`, `SpO₂`, **`Stress`** and `Steps`,
@@ -108,35 +144,54 @@ still validate, and `steps` is `null`, never `0`, when absent.
 
 | File | Role |
 |---|---|
-| `band_bridge.py` | receiver → upstream-schema packet bridge, validated by *their* `TelemetryRecord.parse` before printing |
-| `mirror_band.py` | imports their `laptop/web/app.py`, adds `/band/api` + chip, serves on 8777/8778 |
-| `run_stack.py` | wires bridge stdout → mirror stdin, supervises both processes |
-| `test_integration.py` | 15 stdlib tests: mapping, honesty gates, chip injection, freshness view |
+| `mirror_band.py` | runtime wrapper: imports their `app.py`, serves `/` + `/classic`, owns the honest Band collector and `/band/api` |
+| `home/index.html` | Home Edition UI, CSS and JS; no external assets |
+| `band_bridge.py` | mapping/validation helpers, plus a legacy stdin bridge kept only for compatibility with their `scripts/demo_band_lane.ps1`; not used by the Home Edition or `start_integration.bat` |
+| `test_integration.py` | 25 stdlib tests: mapping, honesty gates, chip injection, collector storage, page contract |
+| `run_stack.py` | removed; the wrapper replaces the old bridge → mirror supervisor |
 
 ## Verification
 
 ```bat
 python -m unittest discover -s kinetiq-integration -v
 python -m unittest discover -s backend -v
+python -m py_compile kinetiq-integration\mirror_band.py
 ```
 
 * their clone untouched: `git -C external\KinetiQ status --porcelain` → empty
-* live page: <http://127.0.0.1:8777/> shows their tiles + the band chip
+* Home Edition: <http://127.0.0.1:8777/> shows our UI with genuine tiles
+* classic view: <http://127.0.0.1:8777/classic> shows their original UI + chip
 * their own API: <http://127.0.0.1:8777/api/telemetry> returns the genuine
-  packet with `source=NATIVE NODE`
-* chip data: <http://127.0.0.1:8777/band/api>
+  packet with `source=HUAWEI BAND 6`
+* Home JSON: <http://127.0.0.1:8777/band/api>
+* lane switch: `POST /api/mode {"mode":"rtos"}` and back to `band`; the RTOS
+  engine repaints their classic view, and the Band collector repaints once when
+  it returns
 
-Verified end-to-end on 2026-10-22: HR 60 bpm, SpO₂ 100 %, stress 57,
-steps 4,181 — Health home screen → receiver → their mirror.
+The last on-device end-to-end run was on 2026-10-22: HR 60 bpm, SpO₂ 100 %,
+stress 57, steps 4,181 — Health home screen → receiver → wrapper → Home
+Edition/classic view. On 2026-10-23 the phone was disconnected; the final UI
+and lane checks used a local receiver fixture and are not presented as hardware
+evidence.
 
 ## Limitations / notes
 
 * The Health home screen must stay in the foreground; the streamer is
-  event-driven, so relay age grows when the screen does not refresh (the chip
-  shows `stale` after 60 s, `offline` after 120 s — by design).
+  event-driven, so relay age grows when the screen does not refresh.
+* This relay does not expose respiratory rate, skin temperature, readiness,
+  activity, motion or PPG signal quality. They are omitted or marked
+  **not measured**; no sample values are inserted into live mode.
 * The upstream schema can only express one SpO₂-style value; stress lives in
-  the chip, not in their packet.
+  the Home Edition and the classic chip, not in their packet.
 * Upstream's static texts ("Sensors simulated…", "Mock engine driving…") refer
-  to their mock engine and are left untouched; the chip states the real source.
+  to their mock engine and are left untouched; the chip and Home Edition state
+  the real source.
+* The partner's own `scripts/demo_band_lane.ps1` is not the supported launcher:
+  it starts their direct Band collector as well as a stdin bridge, which can
+  duplicate packets, and their RTOS lane is inert in that mode. Use
+  `mirror_band.py` for the integrated lane switching.
+* The upstream `79815da` tree contains an uninitialized
+  `Tharun work/Huawei-kinetiq-band6` submodule. It is not needed by this
+  integration and is left untouched.
 * `adb reverse` keeps the phone on `127.0.0.1:8000`; the whole path is local
   and works offline.

@@ -2,18 +2,22 @@
 
 Standalone Android app (package `com.kinetiq.streamer`) that reads the genuine
 heart-rate / SpO2 / stress / step values displayed on the **Huawei Health** home
-screen through an `AccessibilityService` and POSTs them to the local KinetiQ
-laptop receiver. Built for the offline university demo: no Internet, no cloud,
-no simulation.
+screen through an `AccessibilityService`, with a second background track that
+reads Health's own status-bar notification. Values are POSTed to the local
+KinetiQ laptop receiver. Built for the offline university demo: no Internet, no
+cloud, no simulation.
 
 ## Build
 
 ```powershell
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
-C:\Users\Tharz\Android-Dev\gradle-8.2\bin\gradle.bat assembleDebug
+%USERPROFILE%\Android-Dev\gradle-8.2\bin\gradle.bat assembleDebug
 ```
 
 APK: `app\build\outputs\apk\debug\app-debug.apk`
+
+Or run the one-click build/grant/install script from the repository root:
+`install_optimized_app.bat`.
 
 ## Demo setup (USB, no Wi-Fi)
 
@@ -23,10 +27,17 @@ APK: `app\build\outputs\apk\debug\app-debug.apk`
    The default endpoint `http://127.0.0.1:8000/api/wearable` then reaches the
    laptop. For LAN, set `http://<laptop-ip>:8000/api/wearable` instead.
 3. Install the APK, open **KinetiQ Streamer**, open *Accessibility settings*
-   and enable **KinetiQ Streamer**.
+   and enable **KinetiQ Streamer**. Also open notification access and allow
+   **KinetiQ Streamer** if you want background Health-notification coverage.
 4. Press **Save** (endpoint + token), then **Start streaming**.
-5. Open **Huawei Health** and leave its home screen visible. Readings are
-   parsed at most every 10 s and posted at most every 15 s.
+5. Open **Huawei Health** and leave its home screen visible. The active
+   watchdog parses at most every 4 s; POSTs are gated process-wide so the same
+   reading is not duplicated by the notification listener. Identical readings
+   are re-posted only as a 15 s liveness heartbeat.
+
+The optional PC-side fallback is `backend/kinetiq_adb_relay.py`; it reads
+Health notifications and (when Health is foreground) the uiautomator hierarchy
+over USB, and suppresses duplicates against `/api/wearable/latest`.
 
 **Test connection** performs a GET to `/api/wearable/latest` (falling back to
 `/`) and never POSTs.
@@ -37,12 +48,17 @@ APK: `app\build\outputs\apk\debug\app-debug.apk`
   `accessibility_config.xml`) and the active window's package is re-checked.
 - The payload constants are fixed: `source=huawei_band_6_healthapp`,
   `transport=health_app_ui`, `simulated=false`.
-- No POST unless at least one metric was actually parsed from the screen.
+- No POST unless at least one vital (HR/SpO2/stress) was actually parsed.
+  Steps-only packets are refused because the receiver's genuine-slot contract
+  requires a vital.
 - A metric that is not visible is serialised as JSON `null`, never `0`.
-- Values pass sensor range checks (HR 20–260 bpm, SpO2 70–100 %, stress 0–100,
-  steps 0–200,000).
+- Values pass sensor range checks (HR 20-260 bpm, SpO2 70-100 %, stress 0-100,
+  steps 0-200,000).
 - `heart_rate_mode` / `stress_mode` are `realtime` when present,
   `spo2_mode` is `historical` when present, otherwise `unavailable`.
+- The notification listener ignores packages other than `com.huawei.health` and
+  skips a notification if the accessibility watchdog just read the foreground
+  Health screen.
 
 ## Notes / limitations
 
